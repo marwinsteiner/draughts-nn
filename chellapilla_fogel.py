@@ -152,4 +152,40 @@ class MoveGenerator:
         
         return moves
     
+
+class NeuralNetwork(nn.Module):
+    def __init__(self):
+        super(NeuralNetwork, self).__init__()
+        self.king_value = 2.0
+
+        # main network layers
+        self.layers = nn.Sequential(
+            nn.Linear(32, 40),
+            nn.Tanh(),
+            nn.Linear(40, 10),
+            nn.Tanh(),
+            nn.Linear(10, 1),
+            nn.Tanh()
+        )
+
+        self.direct_connection = nn.Parameter(torch.ones(32))
+        self.apply(self._init_weights)
     
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            nn.init.zeros_(module.bias)
+    
+    def forward(self, x):
+        network_output = self.layers(x)
+
+        direct_output = torch.sum(x * self.direct_connection, dim=1, keepdim=True)
+
+        return network_output + direct_output
+    
+    def evaluate(self, board: CheckersBoard) -> float:
+        """Evaluate a board position"""
+        input_vector = torch.tensor(board.board, dtype=torch.float32)
+
+        input_vector[torch.abs(input_vector) > 1] *= self.king_value/2
+        return input_vector.view(1, -1)
