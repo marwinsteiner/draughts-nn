@@ -189,3 +189,28 @@ class NeuralNetwork(nn.Module):
 
         input_vector[torch.abs(input_vector) > 1] *= self.king_value/2
         return input_vector.view(1, -1)
+
+
+class BoardEvaluator:
+    def __init__(self, network: NeuralNetwork):
+        self.network = network
+        self.move_generator = MoveGenerator()
+    
+    def evaluate_position(self, board: CheckersBoard) -> float:
+        """Evaluate a board position"""
+        if self.is_terminal(board):
+            if len(self.move_generator.get_legal_moves(board)) == 0:
+                return -1.0 if board.current_player == 1 else 1.0
+            return 0.0  # draw
+        return self.network.evaluate(board)
+    
+    def is_terminal(self, board: CheckersBoard) -> bool:
+        """Check if position in a move is terminal"""
+        if not self.move_generator.get_legal_moves(board):
+            return True
+        
+        # no pieces left
+        red_pieces = torch.sum(torch.tensor(board.board) > 0)
+        white_pieces = torch.sum(torch.tensor(board.board) < 0)
+        return red_pieces == 0 or white_pieces == 0
+    
