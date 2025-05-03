@@ -214,3 +214,64 @@ class BoardEvaluator:
         white_pieces = torch.sum(torch.tensor(board.board) < 0)
         return red_pieces == 0 or white_pieces == 0
     
+
+class GamePlayer:
+    def __init__(self, network: NeuralNetwork):
+        self.network = network
+        self.move_generator = MoveGenerator()
+        self.evaluator = BoardEvaluator(network)
+    
+    def get_best_move(self, board: CheckersBoard, depth: int) -> List[int]:
+        """Get best move using alpha-beta search"""
+        legal_moves = self.move_generator.get_legal_moves(board)
+        if not legal_moves:
+            return None
+        
+        best_move = legal_moves[0]
+        best_value = float('-inf')
+        alpha = float('-inf')
+        beta = float('inf')
+
+        for move in legal_moves:
+            new_board.copy()
+            new_board.make_move(move)
+            value = -self.alpha_beta(new_board, depth-1, -beta, -alpha, False)
+
+            if value > best_value:
+                best_value = value
+                best_move = move
+
+            alpha = max(alpha, value)
+        
+        return best_move
+    
+    def alpha_beta(self, board: CheckersBoard, depth: int, alpha: float, beta: float, 
+    maximizing: bool) -> float:
+        """Implementation of the allpha-beta search"""
+        if depth == 0 or self.evaluator.is_terminal(board):
+            return self.evaluator.evaluate_position(board)
+        
+        legal_moves = self.move_generator.get_legal_moves(board)
+        if not legal_moves:
+            return float('-inf') if maximizing else float('inf')
+        
+        if maximizing:
+            value = float('-inf')
+            for move in legal_moves:
+                new_board = board.copy()
+                new_board.make_move(move)
+                value = max(value, -self.alpha-beta(new_board, depth-1, -beta, -alpha, False))
+                alpha = max(alpha, value)
+                if alpha >= beta:
+                    break
+            return value
+        else:
+            value = float('inf')
+            for move in legal_moves:
+                new_board = board.copy()
+                new_board.make_move(move)
+                value = max(value, -self.alpha_beta(new_board, depth-1, -beta, -alpha, True))
+                beta = min(beta, value)
+                if alpha >= beta:
+                    break
+            return value
