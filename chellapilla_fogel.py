@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from typing import List, Tuple, Optional
+from loguru import logger
 import random
 
 class CheckersBoard:
@@ -29,6 +30,9 @@ class CheckersBoard:
         
     def get_position(self, row: int, col: int) -> Optional[int]:
         return self.board_mapping.get((row, col))
+    
+    def is_valid_position(self, row: int, col: int) -> Optional[int]:
+        return (row, col) in self.board_mapping
     
     def copy(self):
         new_board = CheckersBoard()
@@ -86,7 +90,10 @@ class MoveGenerator:
         jumps = self.get_all_jumps(board)
         if jumps:
             return jumps
-        return self.get_legal_moves(board)
+        
+        # if no jumps available, get regular moves
+        regular_moves = self.get_all_regular_moves(board)
+        return regular_moves
     
     def get_all_jumps(self, board: CheckersBoard) -> List[List[int]]:
         """Get all possible jump moves"""
@@ -98,7 +105,7 @@ class MoveGenerator:
         return all_jumps
     
     def get_piece_jumps(self, board: CheckersBoard, pos: int,
-    current_sequence: List[int]) -> List[Liat[int]]:
+    current_sequence: List[int]) -> List[List[int]]:
         """Get all possible jumps for a piece recursively"""
         jumps = []
         piece = board.board[pos]
@@ -112,7 +119,7 @@ class MoveGenerator:
             middle_pos = board.get_position(row + dr, col + dc)
             jump_pos = board.get_position(jump_row, jump_col)
 
-            if (middle_pos is not None and jump_pos is not None and board.board[middle_pos] * board-current_player < 0 and board.board[jump_pos] == 0):
+            if (middle_pos is not None and jump_pos is not None and board.board[middle_pos] * board.current_player < 0 and board.board[jump_pos] == 0):
                 temp_board = boad.copy()
                 temp_board.board[jump_pos] = temp_board.board[pos]
                 temp_board.board[pos] = 0
@@ -133,7 +140,7 @@ class MoveGenerator:
         """Get all psosible regular moves"""
         moves = []
         for pos in range(32):
-            if board.board[pos] * board.current > 0:
+            if board.board[pos] * board.current_player > 0:
                 moves.extend(self.get_piece_regular_moves(board, pos))
         return moves
 
@@ -183,11 +190,30 @@ class NeuralNetwork(nn.Module):
 
         return network_output + direct_output
     
+    def state_dict(self, *args, **kwargs):
+        """Overrides state_dict to include king value"""
+        state_dict = super().state_dict(*args, **kwargs)
+        state_dict['king_value'] = self.king_value
+        return state_dict
+    
+    def load_state_dict(self, state_dict, strict=True):
+        """Overrides load_state_dict to handle king_value"""
+        king_value = state_dict.pop('king_value', 2.0)
+        super().load_state_dict(state_dict, strict=strict)
+        self.king_value = king_value
+    
     def evaluate(self, board: CheckersBoard) -> float:
         """Evaluate a board position"""
         input_vector = torch.tensor(board.board, dtype=torch.float32)
 
         input_vector[torch.abs(input_vector) > 1] *= self.king_value/2
+        return input_vector.view(1, -1)
+    
+    def prepare_input_vector(self, board: CheckersBoard) -> torch.Tensor:
+        """Converts board state into neural network input"""
+        input_vector = torch.tensor(board.board, dtype=torch.float32)
+        # king value multiplier
+        input_vector[torch.abs(input_vector) > 1] *= self.king_value / 2
         return input_vector.view(1, -1)
 
 
@@ -233,7 +259,7 @@ class GamePlayer:
         beta = float('inf')
 
         for move in legal_moves:
-            new_board.copy()
+            new_board = board.copy()
             new_board.make_move(move)
             value = -self.alpha_beta(new_board, depth-1, -beta, -alpha, False)
 
@@ -260,7 +286,7 @@ class GamePlayer:
             for move in legal_moves:
                 new_board = board.copy()
                 new_board.make_move(move)
-                value = max(value, -self.alpha-beta(new_board, depth-1, -beta, -alpha, False))
+                value = max(value, -self.alpha_beta(new_board, depth-1, -beta, -alpha, False))
                 alpha = max(alpha, value)
                 if alpha >= beta:
                     break
@@ -275,3 +301,216 @@ class GamePlayer:
                 if alpha >= beta:
                     break
             return value
+
+
+class EvolutionaryTrainer:
+    def __init__(self, population_size: int = 15, device: str = 'cuda' if torch.cuda.is_available() else 'cpu'):
+        self.population_size = population_size
+        self.device = device
+        self.population = [NeuralNetwork().to(device) for _ in range(population_size)]
+        self.tournament_organizer = TournamentOrganizer(device)
+        self.mutation_operator = MutationOperator(device)
+
+
+    def train(self, generations: int):
+        """Train the population for specified number of generations"""
+        for gen in range(generations):
+            logger.info(f'Generation {gen + 1}/{generations}')
+
+            # evaluate the population
+            scores = self.tournament_organizer.run_tournament(self.population)
+
+            # select best performers
+            elite_indices = torch.argsort(torch.tensor(scores))[-self.population_size // 2:]
+
+            # create new population
+            new_population = []
+
+            # keep only elite performers
+            for idx in elite_indices:
+                new_population.append(self.population[idx])
+            
+            # create offspring through mutation
+            while len(new_population) < self.population_size:
+                parent = random.choice(elite_indices.tolist())
+                offspring = self.mutation_operator.mutate_network(self.population[parent])
+                new_population.append(offspring)
+            
+            self.population = new_population
+
+    def get_best_network(self) -> NeuralNetwork:
+        """Return the best performing neural network object"""
+        scores = self.tournament_organizer.run_tournament(self.population)
+        return self.population[torch.argmax(torch.tensor(scores))]
+
+
+class MutationOperator:
+    def __init__(self, device: str):
+        self.device = device
+        self.weight_mutation_rate = 0.1
+        self.weight_mutation_range = 0.2
+        self.king_value_mutation_rate = 0.1
+    
+    def mutate_network(self, network: NeuralNetwork) -> NeuralNetwork:
+        """Creates a mutated copy of the network"""
+        new_network = NeuralNetwork().to(self.device)
+
+        # deep copy of the original network's state dict
+        new_network.load_state_dict(network.state_dict())
+
+        # mutate weights and biases
+        with torch.no_grad():
+            for name, param in new_network.named_parameters():
+                if random.random() < self.weight_mutation_rate:
+                    mutation = torch.randn_like(param) * self.weight_mutation_range
+                    param.data.add_(mutation)
+        
+        # mutate king value
+        if random.random() < self.king_value_mutation_rate:
+            new_network.king_value = self.mutate_king_value(network.king_value)
+        
+        return new_network
+    
+    def mutate_king_value(self, king_value: float) -> float:
+        """Mutate a king value but keep in range [1.0, 3.0]"""
+        mutation = torch.normal(torch.tensor(0.0), torch.tensor(0.1)).item()
+        return float(torch.clamp(torch.tensor(king_value + mutation), 1.0, 3.0))
+
+
+class TournamentOrganizer:
+    def __init__(self, device: str):
+        self.device = device
+        self.game_player = None
+    
+    def run_tournament(self, population: List[NeuralNetwork]) -> np.ndarray:
+        """Run a tournament between different networks"""
+        scores = torch.zeros(len(population), device=self.device)
+
+        for i in range(len(population)):
+            # have each network play 10 games on average
+            opponents = self.select_opponents(5, len(population), exclude=i)
+
+            for opp in opponents:
+                # play two games, switching colors after the first
+                result1 = self.play_game(population[i], population[opp])
+                result2 = self.play_game(population[opp], population[i])
+
+                # update scores
+                scores[i] += self.calculate_score(result1)
+                scores[i] += self.calculate_score(-result2)  # negate score for color switch
+        
+        return scores.cpu().numpy()
+    
+    def select_opponents(self, num_opponents: int, population_size: int, exclude: int) -> List[int]:
+        """Randomly select opponents for a network"""  # TODO: is there edge in giving certain networks specific opponents?
+        available = list(range(population_size))
+        available.remove(exclude)
+        return random.sample(available, num_opponents)
+
+    def play_game(self, network1: NeuralNetwork, network2: NeuralNetwork) -> int:
+        """Plays a game between two networks"""
+        board = CheckersBoard()
+        self.game_player = GamePlayer(network1)
+        opponent_player = GamePlayer(network2)
+
+        moves_without_capture = 0
+
+        while moves_without_capture < 100:  # draw after 100 moves without capture  # TODO: coul make this time-based
+            if board.current_player == 1:
+                move = self.game_player.get_best_move(board, depth=4)
+            else:
+                move = opponent_player.get_best_move(board, depth=4)
+            
+            if not move:
+                return -1 if board.current_player == 1 else 1
+            
+            # check if a move is a capture
+            if abs(move[0] - move[-1]) > 4:
+                moves_without_capture = 0
+            else:
+                moves_without_capture += 1
+            
+            board.make_move(move)
+        
+        return 0  # draw
+    
+    def calculate_score(self, result: int) -> float:
+        """Calculates score for a game result"""
+        if result == 1:  # win
+            return 1.0
+        elif result == 0:  # draw
+            return 0.0
+        else:  # loss
+            return -2.0
+
+
+def main():
+    trainer = EvolutionaryTrainer(population_size=15)
+
+    trainer.train(generations=250)
+
+    best_network = trainer.get_best_network()
+
+    torch.save({
+        'model_state_dict': best_network.state_dict(),
+        'king_value': best_network.king_value,
+    }, 'best_checkers_network.pth')
+
+
+def benchmark_ai(network_path: str, num_games: int = 100):
+    """Test the AI against different strategies"""
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    network = NeuralNetwork().to(device)
+    checkpoint = torch.load(network_path, map_location=device)
+    network.load_state_dict(checkpoint['model_state_dict'])
+    network.eval()
+
+    ai_player = GamePlayer(network)
+    tournament = TournamentOrganizer(device)
+
+    # Create a simple random player for comparison
+    class RandomPlayer:
+        def get_best_move(self, board, depth):
+            moves = MoveGenerator().get_legal_moves(board)
+            return random.choice(moves) if moves else None
+
+    results = {'wins': 0, 'losses': 0, 'draws': 0}
+
+    for game in range(num_games):
+        board = CheckersBoard()
+        moves_without_capture = 0
+
+        while moves_without_capture < 100:
+            if board.current_player == 1:
+                move = ai_player.get_best_move(board, depth=4)
+            else:
+                move = RandomPlayer().get_best_move(board, depth=1)
+
+            if not move:
+                if board.current_player == 1:
+                    results['losses'] += 1
+                else:
+                    results['wins'] += 1
+                break
+
+            if abs(move[0] - move[-1]) > 4:
+                moves_without_capture = 0
+            else:
+                moves_without_capture += 1
+
+            board.make_move(move)
+
+            if moves_without_capture >= 100:
+                results['draws'] += 1
+
+        if game % 10 == 0:
+            print(f"Completed {game}/{num_games} games")
+
+    print("\nBenchmark Results:")
+    print(f"Wins: {results['wins']} ({results['wins']/num_games*100:.1f}%)")
+    print(f"Losses: {results['losses']} ({results['losses']/num_games*100:.1f}%)")
+    print(f"Draws: {results['draws']} ({results['draws']/num_games*100:.1f}%)")
+
+
+if __name__ == '__main__':
+    benchmark_ai(network_path='best_checkers_network.pth')
