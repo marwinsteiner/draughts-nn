@@ -36,9 +36,9 @@ MAX_PLIES = 300
 
 
 def play_one(engine, gen: MoveGen, rng: random.Random, nodes: int, random_plies: int,
-             random_move_prob: float) -> tuple[list[tuple[str, int, int]], float]:
+             random_move_prob: float, start: str | None = None) -> tuple[list[tuple[str, int, int]], float]:
     """Returns ([(hub, score_cp_stm, ply)], white_result in {1, .5, 0})."""
-    game = Game()
+    game = Game(start=start) if start else Game()
     for _ in range(random_plies):
         legal = gen.legal(game.hub)
         if not legal:

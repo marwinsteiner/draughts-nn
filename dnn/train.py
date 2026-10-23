@@ -29,8 +29,23 @@ import torch.nn.functional as F
 C_W, C_B, C_WK, C_BK = ord("w"), ord("b"), ord("W"), ord("B")
 
 
-def load_chunks(dirs: list[Path], max_positions: int | None = None) -> dict[str, np.ndarray]:
-    files = sorted(f for d in dirs for f in d.glob("chunk_*.npz") if ".tmp" not in f.name)
+def resolve_specs(specs: list[str], seed: int = 0) -> list[Path]:
+    """Data specs "DIR[:max_chunks[:repeat]]": max_chunks picks a random subset of the
+    directory's chunks (0 = all), repeat oversamples them (e.g. lesson data)."""
+    rng = np.random.default_rng(seed)
+    files: list[Path] = []
+    for spec in specs:
+        path, *rest = spec.split(":")
+        max_chunks = int(rest[0]) if rest and rest[0] else 0
+        repeat = int(rest[1]) if len(rest) > 1 else 1
+        fs = sorted(f for f in Path(path).glob("chunk_*.npz") if ".tmp" not in f.name)
+        if max_chunks and len(fs) > max_chunks:
+            fs = [fs[i] for i in sorted(rng.choice(len(fs), max_chunks, replace=False))]
+        files += fs * repeat
+    return files
+
+
+def load_chunks(files: list[Path], max_positions: int | None = None) -> dict[str, np.ndarray]:
     parts: dict[str, list[np.ndarray]] = {"pos": [], "score": [], "result": [], "chunk": []}
     total = 0
     for i, f in enumerate(files):
@@ -100,7 +115,7 @@ def export(net: Net, k: float, path: Path) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", type=Path, nargs="+", required=True)
+    ap.add_argument("--data", nargs="+", required=True, help="DIR[:max_chunks[:repeat]]")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--l2", type=int, default=32)
@@ -117,7 +132,7 @@ def main() -> None:
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     t0 = time.time()
-    d = load_chunks(args.data, args.max_positions)
+    d = load_chunks(resolve_specs(args.data), args.max_positions)
     n = len(d["score"])
     k = args.k or fit_k(d["score"][:2_000_000], d["result"][:2_000_000])
     print(f"loaded {n} positions from {d['chunk'].max() + 1} chunks in {time.time() - t0:.0f}s; K={k}", flush=True)
@@ -178,7 +193,7 @@ def main() -> None:
             torch.save(net.state_dict(), args.out / "net.pt")
             export(net, k, args.out / "net.bin")
     (args.out / "meta.json").write_text(json.dumps({
-        "data": [str(p) for p in args.data], "positions": n, "k": k, "lam": args.lam, "hidden": args.hidden,
+        "data": args.data, "positions": n, "k": k, "lam": args.lam, "hidden": args.hidden,
         "l2": args.l2, "l3": args.l3, "epochs": args.epochs, "best_val": best, "history": history,
     }, indent=1))
 

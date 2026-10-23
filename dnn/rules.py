@@ -112,3 +112,61 @@ class Game:
             return self.hub, []
         # replay from the reset position
         return self.since_reset[0], self.moves[-n:]
+
+
+def square_rc(sq: int) -> tuple[int, int]:
+    row = (sq - 1) // 5
+    return row, 2 * ((sq - 1) % 5) + (1 if row % 2 == 0 else 0)
+
+
+def rc_square(row: int, col: int) -> int:
+    return row * 5 + col // 2 + 1
+
+
+def between(a: int, b: int) -> list[int]:
+    """Squares strictly between a and b on their common diagonal."""
+    (r0, c0), (r1, c1) = square_rc(a), square_rc(b)
+    dr, dc = (r1 > r0) - (r1 < r0), (c1 > c0) - (c1 < c0)
+    if abs(r1 - r0) != abs(c1 - c0):
+        raise ValueError(f"{a} and {b} are not on a diagonal")
+    return [rc_square(r0 + k * dr, c0 + k * dc) for k in range(1, abs(r1 - r0))]
+
+
+def replay_lidraughts(moves: str, gen: MoveGen | None = None) -> list[tuple[str, str]]:
+    """lidraughts move list -> [(hub position before, hub move played)].
+
+    The API's move list writes a multi-capture as one token per jump
+    ("24x33 33x22" for 24x22); consecutive chained capture tokens are merged and
+    the jump path disambiguates captures with equal origin and destination."""
+    toks = moves.split()
+    paths: list[list[int]] = []
+    for tok in toks:
+        sep = "x" if "x" in tok else "-"
+        sqs = [int(t) for t in tok.split(sep)]
+        if sep == "x" and paths and paths[-1][0] < 0 and paths[-1][-1] == sqs[0]:
+            paths[-1] += sqs[1:]
+            continue
+        paths.append(([-1] if sep == "x" else [0]) + sqs)  # marker: -1 capture, 0 quiet
+    own = gen is None
+    gen = gen or MoveGen()
+    game, out = Game(), []
+    try:
+        for p in paths:
+            capture, sqs = p[0] < 0, p[1:]
+            legal = gen.legal(game.hub)
+            match = [m for m in legal if hub_move_key(m)[:2] == (sqs[0], sqs[-1])]
+            if len(match) > 1 and capture:
+                caps = set()
+                for a, b in zip(sqs, sqs[1:]):
+                    caps |= {s for s in between(a, b) if game.hub[s] != "e" and game.hub[s].lower() != game.hub[sqs[0]].lower()}
+                match = [m for m in match if hub_move_key(m)[2] == frozenset(caps)]
+            if not match and capture and p is paths[-1]:
+                break  # game ended mid-capture (flag/resign between jumps)
+            if len(match) != 1:
+                raise ValueError(f"cannot resolve {'x'.join(map(str, sqs))} in {game.hub}: {match}")
+            out.append((game.hub, match[0]))
+            game.push(match[0])
+    finally:
+        if own:
+            gen.close()
+    return out
