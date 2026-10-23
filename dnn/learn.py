@@ -26,10 +26,12 @@ import json
 import os
 import random
 import shutil
+import signal
 import subprocess
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 
 import numpy as np
@@ -240,7 +242,51 @@ def promote(cand: Path) -> Path:
     return dest
 
 
+@contextmanager
+def paused_datagen():
+    """SIGSTOP background data generation (and its Scan children) during a lesson,
+    so the lesson and the live bot get the CPU; always resumed afterwards."""
+    out = subprocess.run(["pgrep", "-f", "dnn[.]datagen"], capture_output=True, text=True).stdout.split()
+    pids = [int(p) for p in out]
+    for p in list(pids):
+        kids = subprocess.run(["pgrep", "-P", str(p)], capture_output=True, text=True).stdout.split()
+        pids += [int(k) for k in kids]
+    stopped = []
+    try:
+        for p in pids:
+            try:
+                os.kill(p, signal.SIGSTOP)
+                stopped.append(p)
+            except ProcessLookupError:
+                pass
+        yield
+    finally:
+        for p in stopped:
+            try:
+                os.kill(p, signal.SIGCONT)
+            except ProcessLookupError:
+                pass
+
+
+def promote_dir(src: Path) -> Path:
+    """Install a trained net directory (net.bin, net.pt, meta.json) as the next champion."""
+    n = len(list(NETS.glob("champ_*")))
+    dest = NETS / f"champ_{n:03d}"
+    shutil.copytree(src, dest)
+    tmp = NETS / "current.bin.tmp"
+    if tmp.exists() or tmp.is_symlink():
+        tmp.unlink()
+    tmp.symlink_to(dest.relative_to(NETS) / "net.bin")
+    os.replace(tmp, CURRENT)
+    return dest
+
+
 def run_lesson(game_id: str, g: dict, bot: str, workers: int) -> None:
+    with paused_datagen():
+        _run_lesson(game_id, g, bot, workers)
+
+
+def _run_lesson(game_id: str, g: dict, bot: str, workers: int) -> None:
     log({"event": "lesson_start", "game": game_id, "opponent": g["black"] if bot_color(g, bot) == "W" else g["white"]})
     an = analyse(g, bot, workers)
     log({"event": "analysed", "game": game_id, "mistakes": [(m["ply"], m["played"], m["scan_best"], m["drop"])
@@ -317,9 +363,14 @@ def main() -> None:
     les.add_argument("--game", required=True)
     les.add_argument("--bot", required=True)
     les.add_argument("--workers", type=int, default=12)
+    pr = sub.add_parser("promote", help="install a trained net dir as the next champion")
+    pr.add_argument("--net", type=Path, required=True)
     args = ap.parse_args()
     if args.cmd == "watch":
         watch(args.bot, args.interval, args.workers)
+    elif args.cmd == "promote":
+        dest = promote_dir(args.net)
+        log({"event": "promoted", "champion": dest.name, "source": str(args.net)})
     else:
         raw = lidraughts._get(f"{lidraughts.BASE}/game/export/{args.game}", params={"moves": "true"},
                               headers={"Accept": "application/json"}).json()

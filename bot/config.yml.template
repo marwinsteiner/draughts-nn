@@ -16,6 +16,7 @@ engine:
   hub_options:
     nnue: "@ROOT@/draughts-nn/nets/current.bin"
     tt-size: 512
+    threads: 4
   silence_stderr: false
 abort_time: 30
 fake_think_time: false
