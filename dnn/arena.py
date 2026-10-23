@@ -48,7 +48,8 @@ class EngineSpec:
         if self.kind == "dnn":
             if "nnue" in params:
                 params["nnue"] = str((ROOT / params["nnue"]).resolve()) if not os.path.isabs(params["nnue"]) else params["nnue"]
-            return HubEngine([str(ENGINE), "hub"], params=params)
+            binary = ROOT / params.pop("bin") if "bin" in params else ENGINE  # e.g. bin=var/bins/dnn_base
+            return HubEngine([str(binary), "hub"], params=params)
         if self.kind == "scan":
             params.setdefault("book", "false")
             return HubEngine(["./scan", "hub"], cwd=SCAN_DIR, params=params)

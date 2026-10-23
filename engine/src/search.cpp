@@ -5,6 +5,8 @@
 #include <cstring>
 #include <thread>
 
+SearchOptions search_options;
+
 // ---------------------------------------------------------------------------
 // Transposition table
 
@@ -179,7 +181,7 @@ int Searcher::qsearch(int ply, int alpha, int beta, int qdepth) {
   return best;
 }
 
-int Searcher::search(int ply, int depth, int alpha, int beta, bool pv) {
+int Searcher::search(int ply, int depth, int alpha, int beta, bool pv, bool prune) {
   pv_len_[ply] = ply;
   if (ply > 0 && is_draw(ply)) return 0;
   if (depth <= 0 || ply >= MAX_PLY - 1) return qsearch(ply, alpha, beta, 0);
@@ -209,6 +211,17 @@ int Searcher::search(int ply, int depth, int alpha, int beta, bool pv) {
   if (list.size == 0) return -SCORE_WIN + ply;
   if (tt_move > list.size) tt_move = 0;
 
+  // Shallow-search cut: if a much shallower search of this node clears beta by
+  // a depth-scaled margin, assume the full search would too. The verification
+  // search and its subtree do not prune again.
+  if (search_options.probcut && prune && !pv && depth >= 3 && std::abs(beta) < SCORE_WIN_MIN) {
+    const int margin = search_options.probcut_margin * depth;
+    const int rbeta = beta + margin;
+    const int s = search(ply, depth * 2 / 5, rbeta - 1, rbeta, false, false);
+    if (aborted_) return 0;
+    if (s >= rbeta) return s - margin;
+  }
+
   // Forced moves (single legal move) cost nothing: extend.
   const int ext = list.size == 1 ? 1 : 0;
 
@@ -232,17 +245,22 @@ int Searcher::search(int ply, int depth, int alpha, int beta, bool pv) {
     const int new_depth = depth - 1 + ext;
     int s;
     if (n == 0) {
-      s = -search(ply + 1, new_depth, -beta, -alpha, pv);
+      s = -search(ply + 1, new_depth, -beta, -alpha, pv, prune);
     } else {
+      // Late-move reductions: quiet, non-promoting moves after the first few.
       int r = 0;
-      if (depth >= 3 && n >= 3 && !m.is_capture() && !list.capture_count && ext == 0) {
+      const bool promotion = !(p.kings & bit(m.from)) && (bit(m.to) & (p.side == WHITE ? ROW_TOP : ROW_BOTTOM));
+      if (search_options.lmr == 1) {
+        if (depth >= 2 && n >= (pv ? 3 : 1) && !m.is_capture() && !promotion && ext == 0)
+          r = (!pv && n >= 4) ? 2 : 1;
+      } else if (depth >= 3 && n >= 3 && !m.is_capture() && !promotion && ext == 0) {
         r = int(0.5 + std::log(double(depth)) * std::log(double(n)) / 2.5);
         if (pv) r = std::max(0, r - 1);
         r = std::clamp(r, 0, new_depth - 1);
       }
-      s = -search(ply + 1, new_depth - r, -alpha - 1, -alpha, false);
-      if (s > alpha && r > 0) s = -search(ply + 1, new_depth, -alpha - 1, -alpha, false);
-      if (s > alpha && s < beta && pv) s = -search(ply + 1, new_depth, -beta, -alpha, true);
+      s = -search(ply + 1, new_depth - r, -alpha - 1, -alpha, false, prune);
+      if (s > alpha && r > 0) s = -search(ply + 1, new_depth, -alpha - 1, -alpha, false, prune);
+      if (s > alpha && s < beta && pv) s = -search(ply + 1, new_depth, -beta, -alpha, true, prune);
     }
     if (aborted_) return 0;
 
@@ -336,7 +354,7 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
     }
     int s;
     while (true) {
-      s = search(0, depth, alpha, beta, true);
+      s = search(0, depth, alpha, beta, true, true);
       if (aborted_) break;
       if (s <= alpha) {
         alpha = std::max(s - delta, -SCORE_INF);

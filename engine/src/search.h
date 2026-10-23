@@ -26,6 +26,14 @@ struct Limits {
   bool infinite = false;
 };
 
+// Tunable search switches (Hub params of the same name), for A/B testing.
+struct SearchOptions {
+  int lmr = 1;            // 0: log-formula LMR from depth 3, move 3; 1: index-based (1-2 plies)
+  int probcut = 1;        // shallow-search cut on/off
+  int probcut_margin = 10;  // centi-men per ply of depth
+};
+extern SearchOptions search_options;
+
 struct SearchInfo {
   int depth = 0;
   int score = 0;
@@ -81,7 +89,7 @@ class Searcher {
   void ponderhit();
 
  private:
-  int search(int ply, int depth, int alpha, int beta, bool pv);
+  int search(int ply, int depth, int alpha, int beta, bool pv, bool prune);
   int qsearch(int ply, int alpha, int beta, int qdepth);
   bool is_draw(int ply) const;
   void make(int ply, const Move& m);

@@ -101,10 +101,17 @@ int run_hub() {
       send("id name=dnn version=0.2 author=\"Marwin Steiner\" country=\"United Kingdom\"");
       send("param name=nnue value=\"" + nnue_path + "\" type=string");
       send("param name=tt-size value=" + std::to_string(tt_mb) + " type=int min=1 max=16384");
+      send("param name=lmr value=" + std::to_string(search_options.lmr) + " type=int min=0 max=1");
+      send("param name=probcut value=" + std::to_string(search_options.probcut) + " type=int min=0 max=1");
+      send("param name=probcut-margin value=" + std::to_string(search_options.probcut_margin) +
+           " type=int min=0 max=200");
       send("wait");
     } else if (cmd == "set-param") {
       if (a["name"] == "nnue") nnue_path = a["value"];
       if (a["name"] == "tt-size") tt_mb = std::stoi(a["value"]);
+      if (a["name"] == "lmr") search_options.lmr = std::stoi(a["value"]);
+      if (a["name"] == "probcut") search_options.probcut = std::stoi(a["value"]);
+      if (a["name"] == "probcut-margin") search_options.probcut_margin = std::stoi(a["value"]);
     } else if (cmd == "init") {
       tt->resize(tt_mb);
       if (!nnue_path.empty() && !eval::net.load(nnue_path, nnue_error))
