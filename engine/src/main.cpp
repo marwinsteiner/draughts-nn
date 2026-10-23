@@ -94,6 +94,30 @@ int cmd_acccheck(int argc, char** argv) {
   return 0;
 }
 
+// Micro-benchmark of network inference: ns per evaluate() and per accumulator update.
+int cmd_evalbench(int argc, char** argv) {
+  std::string err;
+  if (argc < 3 || !eval::net.load(argv[2], err)) {
+    std::cerr << "usage: dnn evalbench <nnue> " << err << "\n";
+    return 1;
+  }
+  const Position pos = Position::from_hub("Wbbbbbbbbbbebbebbbbbbbeeebewweeewwwwwwwwwwwewwwwwww");
+  auto a = std::make_unique<Accumulator>(), b = std::make_unique<Accumulator>();
+  eval::refresh(pos, *a);
+  MoveList list;
+  generate_moves(pos, list);
+  const int n = 2'000'000;
+  volatile int sink = 0;
+  auto t0 = std::chrono::steady_clock::now();
+  for (int i = 0; i < n; ++i) sink = sink + eval::evaluate(pos, a.get());
+  auto t1 = std::chrono::steady_clock::now();
+  for (int i = 0; i < n; ++i) eval::update(*a, pos, list[i % list.size], *b);
+  auto t2 = std::chrono::steady_clock::now();
+  std::cout << "evaluate " << std::chrono::duration<double, std::nano>(t1 - t0).count() / n << " ns, update "
+            << std::chrono::duration<double, std::nano>(t2 - t1).count() / n << " ns\n";
+  return 0;
+}
+
 int cmd_bench(int argc, char** argv) {
   const int depth = argc > 2 ? std::stoi(argv[2]) : 12;
   if (argc > 3) {
@@ -143,6 +167,7 @@ int main(int argc, char** argv) {
   if (cmd == "bench") return cmd_bench(argc, argv);
   if (cmd == "eval") return cmd_eval(argc, argv);
   if (cmd == "acccheck") return cmd_acccheck(argc, argv);
+  if (cmd == "evalbench") return cmd_evalbench(argc, argv);
   std::cerr << "unknown command: " << cmd << "\n";
   return 1;
 }

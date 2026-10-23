@@ -42,3 +42,23 @@ def test_incremental_accumulator_matches_refresh(tmp_path):
     out = subprocess.run([str(ENGINE), "acccheck", str(tmp_path / "net.bin")], input="\n".join(hubs) + "\n",
                          capture_output=True, text=True, check=True).stdout
     assert float(out) < 1e-4
+
+
+def test_engine_int8_path_close_to_torch(tmp_path):
+    """L2 = 32 takes the int8 VNNI path on CPUs that have it: allow quantisation error."""
+    torch.manual_seed(2)
+    net = Net(256, 32, 32)
+    with torch.no_grad():
+        for p in net.parameters():
+            p.mul_(3)
+    k = 150.0
+    export(net, k, tmp_path / "net.bin")
+    hubs = [h for h, _ in random_positions(n_games=5, seed=5)][:300]
+    pos = torch.from_numpy(np.stack([np.frombuffer(h.encode(), np.uint8) for h in hubs]))
+    with torch.no_grad():
+        ref = np.clip((net(*features(pos)) * k).numpy(), -5000, 5000)
+    out = subprocess.run([str(ENGINE), "eval", str(tmp_path / "net.bin")], input="\n".join(hubs) + "\n",
+                         capture_output=True, text=True, check=True).stdout
+    ours = np.array([int(x) for x in out.split()])
+    err = np.abs(ours - ref)
+    assert err.max() <= max(3.0, 0.02 * np.abs(ref).max()), (err.max(), np.abs(ref).max())

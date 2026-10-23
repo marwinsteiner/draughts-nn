@@ -3,6 +3,7 @@
 // (100 = one man) from the side to move's point of view.
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,8 @@ struct Network {
   std::vector<float> w4;      // [l3]
   float b4 = 0;
   std::vector<float> w2t, w3t;  // transposed copies used for inference: [2*hidden][l2], [l2][l3]
+  std::vector<int8_t> w2q;      // int8 w2 for the VNNI path (see eval.cpp), 0 scale = unavailable
+  float w2q_scale = 0;
 
   bool load(const std::string& path, std::string& err);
   bool loaded() const { return hidden > 0; }
