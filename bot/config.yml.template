@@ -1,0 +1,54 @@
+# lidraughts-bot configuration for dnn. scripts/deploy_bot.sh fills @ROOT@ and
+# copies this next to lidraughts-bot. The token is NOT stored here: the bot reads
+# LIDRAUGHTS_BOT_TOKEN from the environment (set from ~/.lidraughts_token).
+token: "set-via-LIDRAUGHTS_BOT_TOKEN"
+url: "https://lidraughts.org/"
+engine:
+  dir: "@ROOT@/draughts-nn/engine/"
+  name: "dnn"
+  engine_argument: "hub"
+  working_dir: "@ROOT@/draughts-nn/engine/"
+  protocol: "hub"
+  ponder: true
+  draw_or_resign:
+    resign_enabled: false
+    offer_draw_enabled: false
+  hub_options:
+    nnue: "@ROOT@/draughts-nn/nets/current.bin"
+    tt-size: 512
+  silence_stderr: false
+abort_time: 30
+fake_think_time: false
+rate_limiting_delay: 0
+move_overhead: 1500
+move_overhead_inc: 100
+correspondence:
+  move_time: 60
+  checkin_period: 600
+  disconnect_time: 300
+  ponder: false
+challenge:
+  concurrency: 1
+  sort_by: "best"
+  accept_bot: true
+  only_bot: false
+  max_increment: 180
+  min_increment: 0
+  max_base: 10800
+  min_base: 0
+  variants:
+    - standard
+  time_controls:
+    - ultraBullet
+    - bullet
+    - blitz
+    - rapid
+    - classical
+  modes:
+    - casual
+    - rated
+greeting:
+  hello: "Hi! I'm {me}, a neural-network draughts engine that retrains after every loss. Good luck!"
+  goodbye: "Good game!"
+  hello_spectators: "Hi! I'm {me}."
+  goodbye_spectators: "Thanks for watching!"
