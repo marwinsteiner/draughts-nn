@@ -1,0 +1,26 @@
+# model blobs and data never go in git
+*.pt
+*.pth
+*.onnx
+*.bin
+*.nnue
+data/
+runs/
+logs/
+var/
+build/
+third_party/scan/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# secrets
+*.token
+.env
+
+.idea/
+.ipynb_checkpoints/
