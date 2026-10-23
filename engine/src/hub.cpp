@@ -9,6 +9,7 @@
 #include <mutex>
 #include <sstream>
 #include <thread>
+#include <vector>
 
 #include "search.h"
 
@@ -80,6 +81,8 @@ std::string pv_string(const std::vector<Move>& pv) {
 int run_hub() {
   auto tt = std::make_unique<TT>();
   auto searcher = std::make_unique<Searcher>(*tt);
+  std::vector<std::unique_ptr<Searcher>> helpers;  // Lazy SMP: extra threads sharing the TT
+  int threads = 1;
   std::string nnue_path, nnue_error;
   int tt_mb = 64;
   Root root{Position::start(), {}, {}};
@@ -101,6 +104,7 @@ int run_hub() {
       send("id name=dnn version=0.2 author=\"Marwin Steiner\" country=\"United Kingdom\"");
       send("param name=nnue value=\"" + nnue_path + "\" type=string");
       send("param name=tt-size value=" + std::to_string(tt_mb) + " type=int min=1 max=16384");
+      send("param name=threads value=" + std::to_string(threads) + " type=int min=1 max=64");
       send("param name=lmr value=" + std::to_string(search_options.lmr) + " type=int min=0 max=1");
       send("param name=probcut value=" + std::to_string(search_options.probcut) + " type=int min=0 max=1");
       send("param name=probcut-margin value=" + std::to_string(search_options.probcut_margin) +
@@ -109,11 +113,14 @@ int run_hub() {
     } else if (cmd == "set-param") {
       if (a["name"] == "nnue") nnue_path = a["value"];
       if (a["name"] == "tt-size") tt_mb = std::stoi(a["value"]);
+      if (a["name"] == "threads") threads = std::clamp(std::stoi(a["value"]), 1, 64);
       if (a["name"] == "lmr") search_options.lmr = std::stoi(a["value"]);
       if (a["name"] == "probcut") search_options.probcut = std::stoi(a["value"]);
       if (a["name"] == "probcut-margin") search_options.probcut_margin = std::stoi(a["value"]);
     } else if (cmd == "init") {
       tt->resize(tt_mb);
+      helpers.clear();
+      for (int i = 1; i < threads; ++i) helpers.push_back(std::make_unique<Searcher>(*tt));
       if (!nnue_path.empty() && !eval::net.load(nnue_path, nnue_error))
         send("error message=\"" + nnue_error + "\"");
       send("ready");
@@ -161,9 +168,16 @@ int run_hub() {
       join();
       searcher->pondering = a.count("ponder") > 0;
       searcher->stop = false;
+      for (auto& h : helpers) h->stop = false;
       const Root r = root;
       const Limits l = limits;
-      worker = std::thread([&searcher, r, l] {
+      worker = std::thread([&searcher, &helpers, r, l] {
+        Limits hl = l;  // helpers search until the main thread is done
+        hl.infinite = true;
+        hl.nodes = 0;
+        hl.depth = MAX_PLY - 1;
+        std::vector<std::thread> pool;
+        for (auto& h : helpers) pool.emplace_back([&h, &r, hl] { h->run(r, hl, nullptr); });
         const SearchInfo res = searcher->run(r, l, [](const SearchInfo& si) {
           std::ostringstream o;
           o << "info depth=" << si.depth << " score=" << fmt_score(si.score) << " nodes=" << si.nodes
@@ -172,6 +186,8 @@ int run_hub() {
             << pv_string(si.pv) << "\"";
           send(o.str());
         });
+        for (auto& h : helpers) h->stop = true;
+        for (auto& t : pool) t.join();
         std::string done = "done";
         if (!res.pv.empty()) {
           done += " move=" + move_to_hub(res.pv[0]);

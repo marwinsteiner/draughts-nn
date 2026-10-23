@@ -28,8 +28,8 @@ struct Limits {
 
 // Tunable search switches (Hub params of the same name), for A/B testing.
 struct SearchOptions {
-  int lmr = 1;            // 0: log-formula LMR from depth 3, move 3; 1: index-based (1-2 plies)
-  int probcut = 1;        // shallow-search cut on/off
+  int lmr = 1;            // 0: log-formula LMR from depth 3, move 3; 1: index-based (1-2 plies), +22 Elo
+  int probcut = 0;        // shallow-search cut on/off (measured -35 Elo on top of lmr=1)
   int probcut_margin = 10;  // centi-men per ply of depth
 };
 extern SearchOptions search_options;

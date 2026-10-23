@@ -304,8 +304,7 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
   start_ns_ = now_ns();
   limits_ = limits;
   nodes_ = 0;
-  aborted_ = false;
-  stop = false;
+  aborted_ = false;  // `stop` is reset by the caller before launching (helpers may be stopped early)
   tt_.new_search();
   std::memset(killers_, 0, sizeof killers_);
   for (auto& a : history_)
