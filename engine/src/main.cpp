@@ -4,7 +4,9 @@
 //   dnn perft <depth> [hubpos]    count leaf nodes (move generator check)
 //   dnn moves                     read hub positions from stdin, print legal moves (hub notation)
 //   dnn bench [depth] [nnue]      fixed-depth search over a few positions; prints nodes and speed
+//   dnn eval [nnue]               read hub positions from stdin, print static eval (centi-men, stm)
 #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -39,6 +41,56 @@ int cmd_moves() {
     for (int i = 0; i < list.size; ++i) std::cout << (i ? " " : "") << move_to_hub(list[i]);
     std::cout << "\n" << std::flush;
   }
+  return 0;
+}
+
+int cmd_eval(int argc, char** argv) {
+  if (argc > 2) {
+    std::string err;
+    if (!eval::net.load(argv[2], err)) {
+      std::cerr << err << "\n";
+      return 1;
+    }
+  }
+  auto acc = std::make_unique<Accumulator>();
+  std::string line;
+  while (std::getline(std::cin, line)) {
+    if (line.empty()) continue;
+    const Position pos = Position::from_hub(line);
+    eval::refresh(pos, *acc);
+    std::cout << eval::evaluate(pos, acc.get()) << "\n" << std::flush;
+  }
+  return 0;
+}
+
+// For each stdin position and each legal move: max |incremental - refreshed| accumulator difference.
+int cmd_acccheck(int argc, char** argv) {
+  std::string err;
+  if (argc < 3 || !eval::net.load(argv[2], err)) {
+    std::cerr << "usage: dnn acccheck <nnue> " << err << "\n";
+    return 1;
+  }
+  auto parent = std::make_unique<Accumulator>(), child = std::make_unique<Accumulator>(),
+       fresh = std::make_unique<Accumulator>();
+  float worst = 0;
+  std::string line;
+  while (std::getline(std::cin, line)) {
+    if (line.empty()) continue;
+    const Position pos = Position::from_hub(line);
+    eval::refresh(pos, *parent);
+    MoveList list;
+    generate_moves(pos, list);
+    for (const Move& m : list) {
+      Position c = pos;
+      c.make(m);
+      eval::update(*parent, pos, m, *child);
+      eval::refresh(c, *fresh);
+      for (int p = 0; p < 2; ++p)
+        for (int i = 0; i < eval::net.hidden; ++i)
+          worst = std::max(worst, std::abs(child->v[p][i] - fresh->v[p][i]));
+    }
+  }
+  std::cout << worst << "\n";
   return 0;
 }
 
@@ -89,6 +141,8 @@ int main(int argc, char** argv) {
   if (cmd == "perft") return cmd_perft(argc, argv);
   if (cmd == "moves") return cmd_moves();
   if (cmd == "bench") return cmd_bench(argc, argv);
+  if (cmd == "eval") return cmd_eval(argc, argv);
+  if (cmd == "acccheck") return cmd_acccheck(argc, argv);
   std::cerr << "unknown command: " << cmd << "\n";
   return 1;
 }
