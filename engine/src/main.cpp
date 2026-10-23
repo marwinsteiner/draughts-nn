@@ -37,7 +37,7 @@ int cmd_moves() {
     MoveList list;
     generate_moves(pos, list);
     for (int i = 0; i < list.size; ++i) std::cout << (i ? " " : "") << move_to_hub(list[i]);
-    std::cout << "\n";
+    std::cout << "\n" << std::flush;
   }
   return 0;
 }
