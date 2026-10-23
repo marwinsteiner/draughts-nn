@@ -49,6 +49,12 @@ bool Network::load(const std::string& path, std::string& err) {
     hidden = 0;
     return false;
   }
+  w2t.resize(w2.size());
+  for (int j = 0; j < l2; ++j)
+    for (int i = 0; i < 2 * hidden; ++i) w2t[size_t(i) * l2 + j] = w2[size_t(j) * 2 * hidden + i];
+  w3t.resize(w3.size());
+  for (int j = 0; j < l3; ++j)
+    for (int i = 0; i < l2; ++i) w3t[size_t(i) * l3 + j] = w3[size_t(j) * l2 + i];
   return true;
 }
 
@@ -104,29 +110,32 @@ void update(const Accumulator& parent, const Position& parent_pos, const Move& m
 
 int evaluate(const Position& pos, const Accumulator* acc) {
   if (!net.loaded() || !acc) return handcrafted(pos);
-  const int H = net.hidden;
-  alignas(64) float in[2 * MAX_HIDDEN];
-  const float* own = acc->v[pos.side];
-  const float* opp = acc->v[~pos.side];
-  for (int i = 0; i < H; ++i) {
-    in[i] = crelu(own[i]);
-    in[H + i] = crelu(opp[i]);
+  // Column-wise accumulation over the (transposed) weights: vectorises across
+  // outputs without reassociating float sums, and skips the many inputs that
+  // the clipped ReLU zeroes.
+  const int H = net.hidden, L2 = net.l2, L3 = net.l3;
+  alignas(64) float h2[256], h3[256];
+  std::memcpy(h2, net.b2.data(), sizeof(float) * L2);
+  const float* halves[2] = {acc->v[pos.side], acc->v[~pos.side]};
+  for (int half = 0; half < 2; ++half) {
+    const float* a = halves[half];
+    const float* wbase = &net.w2t[size_t(half) * H * L2];
+    for (int i = 0; i < H; ++i) {
+      const float x = crelu(a[i]);
+      if (x == 0.0f) continue;
+      const float* w = wbase + size_t(i) * L2;
+      for (int j = 0; j < L2; ++j) h2[j] += x * w[j];
+    }
   }
-  float h2[256], h3[256];
-  for (int j = 0; j < net.l2; ++j) {
-    const float* w = &net.w2[size_t(j) * 2 * H];
-    float s = net.b2[j];
-    for (int i = 0; i < 2 * H; ++i) s += w[i] * in[i];
-    h2[j] = crelu(s);
-  }
-  for (int j = 0; j < net.l3; ++j) {
-    const float* w = &net.w3[size_t(j) * net.l2];
-    float s = net.b3[j];
-    for (int i = 0; i < net.l2; ++i) s += w[i] * h2[i];
-    h3[j] = crelu(s);
+  std::memcpy(h3, net.b3.data(), sizeof(float) * L3);
+  for (int i = 0; i < L2; ++i) {
+    const float x = crelu(h2[i]);
+    if (x == 0.0f) continue;
+    const float* w = &net.w3t[size_t(i) * L3];
+    for (int j = 0; j < L3; ++j) h3[j] += x * w[j];
   }
   float out = net.b4;
-  for (int i = 0; i < net.l3; ++i) out += net.w4[i] * h3[i];
+  for (int i = 0; i < L3; ++i) out += net.w4[i] * crelu(h3[i]);
   const int cp = int(out * net.out_scale);
   return std::clamp(cp, -5000, 5000);
 }
