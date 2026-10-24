@@ -122,7 +122,7 @@ def play_game(white: EngineSpec, black: EngineSpec, opening: list[str], limits: 
             return {"result": 0.5, "moves": game.moves, "reason": "draw rule"}
         if len(game.moves) >= MAX_PLIES:
             return {"result": 0.5, "moves": game.moves, "reason": "max plies"}
-        pos, hist = game.hub_moves_since_reset()
+        pos, hist = game.start, game.moves  # full game from the start, as lidraughts-bot sends it
         t0 = time.monotonic()
         res = engines[side].search(pos, hist, time=clocks[side], inc=limits.tc_inc, nodes=limits.nodes,
                                    depth=limits.depth, move_time=limits.move_time) if limits.tc_base is None \

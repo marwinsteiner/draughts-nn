@@ -386,12 +386,13 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
   // are easy for humans to prepare against: early in the game, pick at random
   // among root moves scoring within a small margin of the best.
   if (search_options.opening_random_plies > 0 && root.game_ply < search_options.opening_random_plies &&
-      !limits.infinite && !pondering && !stop && best.depth >= 4 && root_moves.size > 1) {
+      !limits.infinite && !pondering && !stop && best.depth >= 4 && root_moves.size > 1 &&
+      (soft_ <= 0 || elapsed() < soft_ * 0.8)) {  // only if the move's time budget allows
     const Limits saved = limits_;
     limits_.infinite = true;  // short fixed-depth pass; not subject to the clock
     limits_.nodes = 0;
     aborted_ = false;
-    const int d = std::min(best.depth - 2, 10);
+    const int d = std::min(best.depth - 2, 8);
     std::vector<std::pair<int, Move>> scored;
     for (const Move& m : root_moves) {
       make(0, m);
