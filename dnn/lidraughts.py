@@ -87,13 +87,22 @@ def harvest(out: Path, top: int, per_user: int, perfs: list[str]) -> None:
             if u in done_users:
                 continue
             n_new = 0
-            for g in user_games(u, max_games=per_user):
-                c = compact(g)
-                if c is None or c["id"] in seen:
-                    continue
-                seen.add(c["id"])
-                f.write(json.dumps(c) + "\n")
-                n_new += 1
+            for attempt in range(3):  # streams time out now and then; already-seen games are skipped
+                try:
+                    for g in user_games(u, max_games=per_user):
+                        c = compact(g)
+                        if c is None or c["id"] in seen:
+                            continue
+                        seen.add(c["id"])
+                        f.write(json.dumps(c) + "\n")
+                        n_new += 1
+                    break
+                except requests.RequestException as e:
+                    print(f"[{i}/{len(users)}] {u}: {e!r}, retry {attempt + 1}", flush=True)
+                    time.sleep(30)
+            else:
+                f.flush()
+                continue  # leave the user unmarked so a later run retries
             f.flush()
             with users_file.open("a") as uf:
                 uf.write(u + "\n")
