@@ -92,7 +92,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bot", required=True)
     ap.add_argument("--idle", type=float, default=2, help="minutes without a game before challenging")
-    ap.add_argument("--wait", type=float, default=90, help="seconds to wait for acceptance")
+    ap.add_argument("--wait", type=float, default=90, help="seconds a bot gets to accept")
+    ap.add_argument("--wait-human", type=float, default=300, help="seconds a human gets to accept")
     ap.add_argument("--cooldown", type=float, default=120, help="minutes to leave a bot alone after it ignored us")
     ap.add_argument("--per-bot-daily", type=int, default=40)
     ap.add_argument("--human-daily", type=int, default=6, help="max challenges to humans per day in total")
@@ -173,7 +174,7 @@ def main() -> None:
                 log(f"challenged {'human' if is_human else 'bot'} {opp} {tc} ({cid})")
                 started = False
                 t0 = time.time()
-                while time.time() - t0 < args.wait:
+                while time.time() - t0 < (args.wait_human if is_human else args.wait):
                     time.sleep(10)
                     now_games = games_now()
                     if now_games:

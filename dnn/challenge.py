@@ -115,7 +115,7 @@ def main() -> None:
     ap.add_argument("--max", type=int, default=3)
     ap.add_argument("--tc", default="180+2")
     ap.add_argument("--perf", default="blitz")
-    ap.add_argument("--wait", type=float, default=90)
+    ap.add_argument("--wait", type=float, default=300, help="seconds a human gets to accept")
     ap.add_argument("--min-rating", type=int, default=0)
     ap.add_argument("--watch", action="store_true")
     ap.add_argument("--interval", type=float, default=10, help="minutes between checks (--watch)")
