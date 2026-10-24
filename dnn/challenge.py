@@ -124,14 +124,16 @@ def main() -> None:
     if not args.watch:
         run_round(args)
         return
-    sent: list[float] = []
     per_round = args.max
     while True:
-        sent = [t for t in sent if time.time() - t < 86400]
-        if len(sent) < args.daily:
-            args.max = min(per_round, args.daily - len(sent))
+        # The daily cap counts from the shared record (survives restarts and
+        # includes manual rounds): everyone asked in the last 24 hours.
+        asked = json.loads(STATE.read_text()) if STATE.exists() else {}
+        sent = sum(time.time() - t < 86400 for t in asked.values())
+        if sent < args.daily:
+            args.max = min(per_round, args.daily - sent)
             try:
-                sent += [time.time()] * run_round(args)
+                run_round(args)
             except Exception as e:  # network trouble: try again next time
                 print(f"{time.strftime('%H:%M:%S')} error: {e!r}", flush=True)
         time.sleep(args.interval * 60)
