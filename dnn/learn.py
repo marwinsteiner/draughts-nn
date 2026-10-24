@@ -321,7 +321,8 @@ def watch(bot: str, interval: int, workers: int) -> None:
     state = load_state()
     while True:
         try:
-            raws = list(lidraughts.user_games(bot, since=state["since"], token=token))
+            raws = list(lidraughts.user_games(bot, since=state["since"], token=token, rated_only=False,
+                                              clocks=True))
         except Exception as e:  # network trouble: try again later
             log({"event": "poll_error", "error": repr(e)})
             time.sleep(interval)
@@ -331,6 +332,8 @@ def watch(bot: str, interval: int, workers: int) -> None:
                 continue
             g = lidraughts.compact(raw)
             state["seen"].append(raw["id"])
+            with (VAR / "games_raw.jsonl").open("a") as f:  # full API record (clocks, status, players)
+                f.write(json.dumps(raw) + "\n")
             if g is None:
                 continue
             with (VAR / "games.jsonl").open("a") as f:

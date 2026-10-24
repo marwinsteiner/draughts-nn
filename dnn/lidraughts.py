@@ -43,8 +43,12 @@ def top_players(perf: str, n: int = 200) -> list[str]:
 
 
 def user_games(user: str, *, max_games: int | None = None, since: int | None = None,
-               token: str | None = None) -> Iterator[dict]:
-    params = {"rated": "true", "moves": "true", "perfType": "ultraBullet,bullet,blitz,rapid,classical"}
+               token: str | None = None, rated_only: bool = True, clocks: bool = False) -> Iterator[dict]:
+    params = {"moves": "true", "perfType": "ultraBullet,bullet,blitz,rapid,classical"}
+    if rated_only:
+        params["rated"] = "true"
+    if clocks:
+        params["clocks"] = "true"
     if max_games:
         params["max"] = str(max_games)
     if since:

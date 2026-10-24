@@ -2,6 +2,8 @@
 // pydraughts use to drive engines.
 #include "hub.h"
 
+#include <chrono>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -84,6 +86,7 @@ int run_hub() {
   std::vector<std::unique_ptr<Searcher>> helpers;  // Lazy SMP: extra threads sharing the TT
   int threads = 1;
   std::string nnue_path, nnue_error;
+  std::string search_log;  // if set, one JSON line per finished search is appended here
   int tt_mb = 64;
   Root root{Position::start(), {}, {}};
   root.draw.limit = draw_limit(root.pos);
@@ -103,6 +106,7 @@ int run_hub() {
     if (cmd == "hub") {
       send("id name=dnn version=0.2 author=\"Marwin Steiner\" country=\"United Kingdom\"");
       send("param name=nnue value=\"" + nnue_path + "\" type=string");
+      send("param name=search-log value=\"" + search_log + "\" type=string");
       send("param name=tt-size value=" + std::to_string(tt_mb) + " type=int min=1 max=16384");
       send("param name=threads value=" + std::to_string(threads) + " type=int min=1 max=64");
       send("param name=lmr value=" + std::to_string(search_options.lmr) + " type=int min=0 max=1");
@@ -112,6 +116,7 @@ int run_hub() {
       send("wait");
     } else if (cmd == "set-param") {
       if (a["name"] == "nnue") nnue_path = a["value"];
+      if (a["name"] == "search-log") search_log = a["value"];
       if (a["name"] == "tt-size") tt_mb = std::stoi(a["value"]);
       if (a["name"] == "threads") threads = std::clamp(std::stoi(a["value"]), 1, 64);
       if (a["name"] == "lmr") search_options.lmr = std::stoi(a["value"]);
@@ -171,7 +176,7 @@ int run_hub() {
       for (auto& h : helpers) h->stop = false;
       const Root r = root;
       const Limits l = limits;
-      worker = std::thread([&searcher, &helpers, r, l] {
+      worker = std::thread([&searcher, &helpers, &search_log, r, l] {
         Limits hl = l;  // helpers search until the main thread is done
         hl.infinite = true;
         hl.nodes = 0;
@@ -194,6 +199,17 @@ int run_hub() {
           if (res.pv.size() > 1) done += " ponder=" + move_to_hub(res.pv[1]);
         }
         send(done);
+        if (!search_log.empty()) {
+          // what the bot thought at every move: joined later with the game record by position
+          std::ostringstream o;
+          const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::system_clock::now().time_since_epoch()).count();
+          o << "{\"t\": " << ms << ", \"pos\": \"" << r.pos.to_hub() << "\", \"time_left\": " << l.time
+            << ", \"inc\": " << l.inc << ", \"depth\": " << res.depth << ", \"score\": " << res.score
+            << ", \"nodes\": " << res.nodes << ", \"secs\": " << res.time << ", \"pv\": \"" << pv_string(res.pv)
+            << "\"}";
+          std::ofstream(search_log, std::ios::app) << o.str() << '\n';
+        }
       });
     } else if (cmd == "stop") {
       searcher->stop = true;
