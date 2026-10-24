@@ -114,7 +114,12 @@ def _scan_scores(args: tuple) -> list[tuple[int, float, str]]:
 
 
 def analyse(g: dict, bot: str, workers: int) -> dict:
-    plies = replay(g["moves"])
+    return analyse_plies(replay(g["moves"]), bot_color(g, bot), workers)
+
+
+def analyse_plies(plies: list[tuple[str, str]], me: str, workers: int) -> dict:
+    """Scan-score every position of a game; mistakes are `me`'s ('W'/'B') moves that
+    differ from Scan's choice and drop its evaluation by >= MISTAKE_MEN."""
     final = Game()
     for _, mv in plies:
         final.push(mv)
@@ -126,7 +131,6 @@ def analyse(g: dict, bot: str, workers: int) -> dict:
         for part in ex.map(_scan_scores, shards):
             for i, s, mv in part:
                 scores[i] = (s, mv)
-    me = bot_color(g, bot)
     mistakes = []
     for i, (hub, mv) in enumerate(plies):
         if hub[0] != me:
@@ -157,10 +161,9 @@ def _branch_worker(args: tuple) -> list[tuple[str, int, int, float]]:
     return out
 
 
-def lesson_data(game_id: str, g: dict, an: dict, workers: int) -> Path:
-    out_dir = LESSONS / game_id
+def lesson_data(game_id: str, white_result: float, an: dict, workers: int, root: Path = LESSONS) -> Path:
+    out_dir = root / game_id
     out_dir.mkdir(parents=True, exist_ok=True)
-    white_result = {"white": 1.0, "black": 0.0}.get(g.get("winner") or "", 0.5)
     rows: list[tuple[str, int, int, float]] = []
     gen = MoveGen()
     for i, hub in enumerate(an["hubs"]):
@@ -193,6 +196,19 @@ def lesson_data(game_id: str, g: dict, an: dict, workers: int) -> Path:
 # ---------------------------------------------------------------------------
 # 3-5. finetune, gate, promote
 
+@contextmanager
+def promotion_lock():
+    """Serialises finetune -> gate -> promote between human lessons and sparring."""
+    import fcntl
+    VAR.mkdir(parents=True, exist_ok=True)
+    with (VAR / "promote.lock").open("w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
 def finetune(lesson_dirs: list[Path], tag: str) -> Path:
     champ = champion_dir()
     meta = json.loads((champ / "meta.json").read_text())
@@ -218,13 +234,13 @@ def mistake_fix_rate(net: Path, mistakes: list[dict]) -> float:
     return fixed / len(mistakes)
 
 
-def gate(cand: Path, champ: Path) -> dict:
+def gate(cand: Path, champ: Path, workers: int = GATE_WORKERS) -> dict:
     a, b = EngineSpec.parse(f"dnn:nnue={cand / 'net.bin'}"), EngineSpec.parse(f"dnn:nnue={champ / 'net.bin'}")
     base, _, inc = GATE_TC.partition("+")
     limits = Limits(tc_base=float(base), tc_inc=float(inc))
     openings = make_openings(GATE_GAMES // 2, 4, seed=int(time.time()))
     scores = []
-    with ProcessPoolExecutor(max_workers=GATE_WORKERS) as ex:
+    with ProcessPoolExecutor(max_workers=workers) as ex:
         for pair in ex.map(_pair, [a] * len(openings), [b] * len(openings), openings, [limits] * len(openings)):
             scores += [s for s, _ in pair]
     return {"score": sum(scores) / len(scores), "summary": summarise(scores)}
@@ -291,20 +307,22 @@ def _run_lesson(game_id: str, g: dict, bot: str, workers: int) -> None:
     an = analyse(g, bot, workers)
     log({"event": "analysed", "game": game_id, "mistakes": [(m["ply"], m["played"], m["scan_best"], m["drop"])
                                                              for m in an["mistakes"]]})
-    d = lesson_data(game_id, g, an, workers)
-    champ = champion_dir()
-    cand = finetune([d], game_id)
-    fix_before = mistake_fix_rate(champ / "net.bin", an["mistakes"])
-    fix_after = mistake_fix_rate(cand / "net.bin", an["mistakes"])
-    res = gate(cand, champ)
-    ok = res["score"] >= GATE_MIN_SCORE
-    log({"event": "gate", "game": game_id, "candidate": cand.name, "champion": champ.name, **res,
-         "mistake_fix_before": fix_before, "mistake_fix_after": fix_after, "promoted": ok})
-    if ok:
-        dest = promote(cand)
-        log({"event": "promoted", "champion": dest.name})
-    else:
-        shutil.rmtree(cand, ignore_errors=True)
+    white_result = {"white": 1.0, "black": 0.0}.get(g.get("winner") or "", 0.5)
+    d = lesson_data(game_id, white_result, an, workers)
+    with promotion_lock():
+        champ = champion_dir()
+        cand = finetune([d], game_id)
+        fix_before = mistake_fix_rate(champ / "net.bin", an["mistakes"])
+        fix_after = mistake_fix_rate(cand / "net.bin", an["mistakes"])
+        res = gate(cand, champ)
+        ok = res["score"] >= GATE_MIN_SCORE
+        log({"event": "gate", "game": game_id, "candidate": cand.name, "champion": champ.name, **res,
+             "mistake_fix_before": fix_before, "mistake_fix_after": fix_after, "promoted": ok})
+        if ok:
+            dest = promote(cand)
+            log({"event": "promoted", "champion": dest.name})
+        else:
+            shutil.rmtree(cand, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
