@@ -209,14 +209,17 @@ def promotion_lock():
             fcntl.flock(f, fcntl.LOCK_UN)
 
 
-def finetune(lesson_dirs: list[Path], tag: str) -> Path:
+def finetune(lesson_dirs: list[Path | str], tag: str, base_chunks: int = BASE_CHUNKS,
+             repeat: int = LESSON_REPEAT) -> Path:
+    """Warm-start from the champion; lesson_dirs may contain globs (pooled lessons)."""
     champ = champion_dir()
     meta = json.loads((champ / "meta.json").read_text())
     out = NETS / f"cand_{tag}"
-    data = [f"{BASE_DATA}:{BASE_CHUNKS}"] + [f"{d}:0:{LESSON_REPEAT}" for d in lesson_dirs]
+    data = [f"{BASE_DATA}:{base_chunks}"] + [f"{d}:0:{repeat}" for d in lesson_dirs]
     cmd = [sys.executable, "-m", "dnn.train", "--data", *data, "--out", str(out), "--init", str(champ / "net.pt"),
            "--k", str(meta["k"]), "--hidden", str(meta["hidden"]), "--l2", str(meta["l2"]), "--l3", str(meta["l3"]),
-           "--epochs", "3", "--lr", "2e-4", "--lam", str(meta.get("lam", 0.75))]
+           "--epochs", "3", "--lr", "2e-4", "--lam", str(meta.get("lam", 0.75)),
+           "--data-seed", str(int(time.time()) % 100000)]
     subprocess.run(cmd, cwd=ROOT, check=True)
     return out
 
@@ -234,11 +237,11 @@ def mistake_fix_rate(net: Path, mistakes: list[dict]) -> float:
     return fixed / len(mistakes)
 
 
-def gate(cand: Path, champ: Path, workers: int = GATE_WORKERS) -> dict:
+def gate(cand: Path, champ: Path, workers: int = GATE_WORKERS, games: int = GATE_GAMES) -> dict:
     a, b = EngineSpec.parse(f"dnn:nnue={cand / 'net.bin'}"), EngineSpec.parse(f"dnn:nnue={champ / 'net.bin'}")
     base, _, inc = GATE_TC.partition("+")
     limits = Limits(tc_base=float(base), tc_inc=float(inc))
-    openings = make_openings(GATE_GAMES // 2, 4, seed=int(time.time()))
+    openings = make_openings(games // 2, 4, seed=int(time.time()))
     scores = []
     with ProcessPoolExecutor(max_workers=workers) as ex:
         for pair in ex.map(_pair, [a] * len(openings), [b] * len(openings), openings, [limits] * len(openings)):

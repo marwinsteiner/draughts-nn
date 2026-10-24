@@ -24,8 +24,16 @@ from dnn.learn import (CURRENT, ROOT, analyse_plies, champion_dir, finetune, gat
                        promotion_lock)
 from dnn.rules import Game
 
+BENCH_LOG = ROOT / "var" / "learn" / "benchmarked.txt"
+
 SPAR_DATA = ROOT / "data" / "spar"
-SPAR_MIN_SCORE = 0.51
+SPAR_MIN_SCORE = 0.525  # over SPAR_GATE_GAMES: a neutral candidate almost never passes, +25 Elo usually does
+SPAR_GATE_GAMES = 400
+SPAR_BASE_CHUNKS = 600  # ~13M base positions per fine-tune, so lessons don't erode general play
+SPAR_REPEAT = 4
+POOLED_LESSONS = ["data/spar/*", "data/lessons/*"]  # every lesson so far, sparring and human
+BENCH_GAMES = 400       # fixed openings: comparable across champions
+BENCH_SEED = 20261024
 MAX_LESSONS = 12  # lost games turned into lessons per round
 OPENING_PLIES = 4
 
@@ -51,8 +59,20 @@ def play_round(champ_bin: Path, games: int, tc: str, workers: int, seed: int) ->
     return out
 
 
+def benchmark(champ: Path, tc: str, workers: int) -> None:
+    """Champion vs Scan on a fixed opening set, once per champion."""
+    done = BENCH_LOG.read_text().split() if BENCH_LOG.exists() else []
+    if champ.name in done:
+        return
+    results = play_round(champ / "net.bin", BENCH_GAMES, tc, workers, seed=BENCH_SEED)
+    log({"event": "spar_benchmark", "champion": champ.name, "vs_scan": summarise([s for s, _ in results])})
+    with BENCH_LOG.open("a") as f:
+        f.write(champ.name + "\n")
+
+
 def run(rounds: int, games: int, tc: str, workers: int, dry_run: bool = False) -> None:
     for r in range(rounds):
+        benchmark(champion_dir(), tc, workers)
         tag = time.strftime("%Y%m%d_%H%M%S")
         champ = champion_dir()
         results = play_round(champ / "net.bin", games, tc, workers, seed=int(time.time()))
@@ -73,8 +93,8 @@ def run(rounds: int, games: int, tc: str, workers: int, dry_run: bool = False) -
             continue
         with promotion_lock():
             champ = champion_dir()  # a human lesson may have promoted meanwhile
-            cand = finetune(lesson_dirs, f"spar_{tag}")
-            res = gate(cand, champ, workers)
+            cand = finetune(POOLED_LESSONS, f"spar_{tag}", base_chunks=SPAR_BASE_CHUNKS, repeat=SPAR_REPEAT)
+            res = gate(cand, champ, workers, games=SPAR_GATE_GAMES)
             ok = res["score"] >= SPAR_MIN_SCORE and not dry_run
             log({"event": "spar_gate", "round": tag, "candidate": cand.name, "champion": champ.name, **res,
                  "promoted": ok, "dry_run": dry_run})

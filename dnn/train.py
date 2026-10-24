@@ -15,6 +15,7 @@ Target: lam * sigmoid(teacher_score / K) + (1 - lam) * result01.
 from __future__ import annotations
 
 import argparse
+import glob as globmod
 import json
 import math
 import struct
@@ -31,14 +32,16 @@ C_W, C_B, C_WK, C_BK = ord("w"), ord("b"), ord("W"), ord("B")
 
 def resolve_specs(specs: list[str], seed: int = 0) -> list[Path]:
     """Data specs "DIR[:max_chunks[:repeat]]": max_chunks picks a random subset of the
-    directory's chunks (0 = all), repeat oversamples them (e.g. lesson data)."""
+    directory's chunks (0 = all), repeat oversamples them (e.g. lesson data). DIR may
+    be a glob ("data/spar/*") to pool many lesson directories."""
     rng = np.random.default_rng(seed)
     files: list[Path] = []
     for spec in specs:
         path, *rest = spec.split(":")
         max_chunks = int(rest[0]) if rest and rest[0] else 0
         repeat = int(rest[1]) if len(rest) > 1 else 1
-        fs = sorted(f for f in Path(path).glob("chunk_*.npz") if ".tmp" not in f.name)
+        dirs = sorted(Path(d) for d in globmod.glob(path)) if "*" in path else [Path(path)]
+        fs = sorted(f for d in dirs for f in d.glob("chunk_*.npz") if ".tmp" not in f.name)
         if max_chunks and len(fs) > max_chunks:
             fs = [fs[i] for i in sorted(rng.choice(len(fs), max_chunks, replace=False))]
         files += fs * repeat
@@ -128,11 +131,12 @@ def main() -> None:
     ap.add_argument("--max-positions", type=int)
     ap.add_argument("--init", type=Path, help="warm-start from a .pt state dict")
     ap.add_argument("--k", type=float, help="fixed K (default: fit on data)")
+    ap.add_argument("--data-seed", type=int, default=0, help="seed for max_chunks subsets")
     args = ap.parse_args()
 
     dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     t0 = time.time()
-    d = load_chunks(resolve_specs(args.data), args.max_positions)
+    d = load_chunks(resolve_specs(args.data, args.data_seed), args.max_positions)
     n = len(d["score"])
     k = args.k or fit_k(d["score"][:2_000_000], d["result"][:2_000_000])
     print(f"loaded {n} positions from {d['chunk'].max() + 1} chunks in {time.time() - t0:.0f}s; K={k}", flush=True)
