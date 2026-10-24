@@ -219,6 +219,8 @@ int run_hub() {
           std::ofstream(search_log, std::ios::app) << o.str() << '\n';
         }
       });
+    } else if (cmd == "print-pos") {  // debugging: the root position after `pos`
+      send("pos pos=" + root.pos.to_hub() + " game-ply=" + std::to_string(root.game_ply));
     } else if (cmd == "stop") {
       searcher->stop = true;
     } else if (cmd == "ponder-hit") {

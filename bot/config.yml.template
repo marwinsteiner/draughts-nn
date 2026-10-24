@@ -18,6 +18,7 @@ engine:
     tt-size: 512
     threads: 4
     search-log: "@ROOT@/draughts-nn/var/searchlog.jsonl"
+    opening-random-plies: 10
   silence_stderr: false
 abort_time: 30
 fake_think_time: false

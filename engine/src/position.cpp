@@ -80,9 +80,10 @@ void Position::make(const Move& m) {
   const BB from = bit(m.from), to = bit(m.to);
   const bool was_king = kings & from;
 
-  pieces[us] ^= from | to;
+  // Clear-then-set rather than XOR: a king capture can end on its own start square.
+  pieces[us] = (pieces[us] & ~from) | to;
   key ^= zobrist::piece[us][was_king][m.from];
-  if (was_king) kings ^= from | to;
+  if (was_king) kings = (kings & ~from) | to;
 
   BB cap = m.captured;
   while (cap) {
