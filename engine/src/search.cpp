@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <random>
 #include <thread>
 
 SearchOptions search_options;
@@ -379,6 +380,37 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
       if (depth > dist + 2) break;
     }
     if (!pondering && !limits.infinite && soft_ > 0 && elapsed() > soft_ * 0.6) break;
+  }
+  // Opening variety. Bots that replay the same opening against the same opponent
+  // get those games ignored for rating (lidraughts BotFarming), and fixed openings
+  // are easy for humans to prepare against: early in the game, pick at random
+  // among root moves scoring within a small margin of the best.
+  if (search_options.opening_random_plies > 0 && root.game_ply < search_options.opening_random_plies &&
+      !limits.infinite && !pondering && !stop && best.depth >= 4 && root_moves.size > 1) {
+    const Limits saved = limits_;
+    limits_.infinite = true;  // short fixed-depth pass; not subject to the clock
+    limits_.nodes = 0;
+    aborted_ = false;
+    const int d = std::min(best.depth - 2, 10);
+    std::vector<std::pair<int, Move>> scored;
+    for (const Move& m : root_moves) {
+      make(0, m);
+      const int s = -search(1, d, -SCORE_INF, SCORE_INF, true, true);
+      if (aborted_) break;
+      scored.emplace_back(s, m);
+    }
+    limits_ = saved;
+    if (!aborted_ && scored.size() == size_t(root_moves.size)) {
+      int top = -SCORE_INF;
+      for (const auto& [s, m] : scored) top = std::max(top, s);
+      std::vector<Move> ok;
+      for (const auto& [s, m] : scored)
+        if (s >= top - search_options.opening_random_margin) ok.push_back(m);
+      static std::mt19937_64 rng(std::random_device{}());
+      const Move pick = ok[rng() % ok.size()];
+      if (!(pick == best.pv[0])) best.pv = {pick};
+    }
+    aborted_ = false;
   }
   // Infinite/ponder searches only return when told to.
   while ((limits.infinite || pondering) && !stop) {

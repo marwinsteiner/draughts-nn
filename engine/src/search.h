@@ -31,6 +31,10 @@ struct SearchOptions {
   int lmr = 1;            // 0: log-formula LMR from depth 3, move 3; 1: index-based (1-2 plies), +22 Elo
   int probcut = 0;        // shallow-search cut on/off (measured -35 Elo on top of lmr=1)
   int probcut_margin = 10;  // centi-men per ply of depth
+  // Opening variety: in the first N plies of a game, play a random move among
+  // those within `opening_random_margin` centi-men of the best (0 = off).
+  int opening_random_plies = 0;
+  int opening_random_margin = 15;
 };
 extern SearchOptions search_options;
 
@@ -74,6 +78,7 @@ struct Root {
   Position pos;
   std::vector<uint64_t> history;  // keys of earlier positions since the last reset, oldest first
   DrawState draw;
+  int game_ply = 0;  // plies played since the game's start position
 };
 
 class Searcher {

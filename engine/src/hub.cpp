@@ -111,6 +111,10 @@ int run_hub() {
       send("param name=threads value=" + std::to_string(threads) + " type=int min=1 max=64");
       send("param name=lmr value=" + std::to_string(search_options.lmr) + " type=int min=0 max=1");
       send("param name=probcut value=" + std::to_string(search_options.probcut) + " type=int min=0 max=1");
+      send("param name=opening-random-plies value=" + std::to_string(search_options.opening_random_plies) +
+           " type=int min=0 max=40");
+      send("param name=opening-random-margin value=" + std::to_string(search_options.opening_random_margin) +
+           " type=int min=0 max=200");
       send("param name=probcut-margin value=" + std::to_string(search_options.probcut_margin) +
            " type=int min=0 max=200");
       send("wait");
@@ -122,6 +126,8 @@ int run_hub() {
       if (a["name"] == "lmr") search_options.lmr = std::stoi(a["value"]);
       if (a["name"] == "probcut") search_options.probcut = std::stoi(a["value"]);
       if (a["name"] == "probcut-margin") search_options.probcut_margin = std::stoi(a["value"]);
+      if (a["name"] == "opening-random-plies") search_options.opening_random_plies = std::stoi(a["value"]);
+      if (a["name"] == "opening-random-margin") search_options.opening_random_margin = std::stoi(a["value"]);
     } else if (cmd == "init") {
       tt->resize(tt_mb);
       helpers.clear();
@@ -144,6 +150,7 @@ int run_hub() {
       }
       root.history.clear();
       root.draw = DrawState{0, draw_limit(root.pos)};
+      root.game_ply = 0;
       std::istringstream ms(a["moves"]);
       std::string tok;
       while (ms >> tok) {
@@ -155,6 +162,7 @@ int run_hub() {
         const Position before = root.pos;
         root.pos.make(m);
         root.draw = next_draw_state(before, m, root.pos, root.draw);
+        ++root.game_ply;
         if (root.draw.clock == 0)
           root.history.clear();
         else
