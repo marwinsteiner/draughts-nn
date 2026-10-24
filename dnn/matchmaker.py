@@ -84,16 +84,17 @@ def main() -> None:
         STATE.parent.mkdir(parents=True, exist_ok=True)
         STATE.write_text(json.dumps(state, indent=1))
 
-    def opponents_now() -> list[str]:
+    def games_now() -> list[str]:
+        """Ids of games in progress (a challenge's id becomes the game's id)."""
         r = requests.get(f"{lidraughts.BASE}/api/account/playing", headers=auth, timeout=30)
-        return [(g.get("opponent") or {}).get("username", "?").lower() for g in r.json().get("nowPlaying", [])]
+        return [g.get("gameId") or g.get("id") or "?" for g in r.json().get("nowPlaying", [])]
 
     last_busy = time.time()
     bots_cache: tuple[float, list[str]] = (0.0, [])
     while True:
         time.sleep(30)
         try:
-            if opponents_now():
+            if games_now():
                 last_busy = time.time()
             elif time.time() - last_busy > args.idle * 60:
                 now = time.time()
@@ -131,9 +132,9 @@ def main() -> None:
                 t0 = time.time()
                 while time.time() - t0 < args.wait:
                     time.sleep(10)
-                    now_opps = opponents_now()
-                    if now_opps:
-                        started = opp.lower() in now_opps  # a human may have challenged us meanwhile
+                    now_games = games_now()
+                    if now_games:
+                        started = cid in now_games  # another game (e.g. a human's challenge) may have started
                         break
                 if started:
                     log(f"{opp} accepted {tc}")
