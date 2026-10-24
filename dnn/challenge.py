@@ -27,10 +27,27 @@ import requests
 from dnn import lidraughts
 
 STATE = Path(__file__).parents[1] / "var" / "challenged_humans.json"
+LOCK = STATE.with_suffix(".lock")
 
 
 def run_round(args: argparse.Namespace) -> int:
-    """One round; returns the number of challenges sent."""
+    """One round; returns the number of challenges sent. Rounds are serialised by a
+    file lock (manual runs and --watch must never ask the same person twice)."""
+    import fcntl
+    LOCK.parent.mkdir(parents=True, exist_ok=True)
+    with LOCK.open("w") as lockf:
+        fcntl.flock(lockf, fcntl.LOCK_EX)
+        return _run_round(args)
+
+
+def _save(asked: dict) -> None:
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    tmp = STATE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(asked, indent=1))
+    tmp.replace(STATE)
+
+
+def _run_round(args: argparse.Namespace) -> int:
     B = lidraughts.BASE
     auth = {"Authorization": "Bearer " + (Path.home() / ".lidraughts_token").read_text().strip(), **lidraughts.UA}
     asked = json.loads(STATE.read_text()) if STATE.exists() else {}
@@ -65,6 +82,7 @@ def run_round(args: argparse.Namespace) -> int:
                 print("bot is already playing; stopping")
                 break
             asked[name.lower()] = time.time()
+            _save(asked)  # immediately, before the request goes out
             r = requests.post(f"{B}/api/challenge/{name}", headers=auth, timeout=30,
                               data={"rated": "true", "clock.limit": base, "clock.increment": inc or "0",
                                     "variant": "standard", "color": "random"})
@@ -88,8 +106,7 @@ def run_round(args: argparse.Namespace) -> int:
             print(f"{name}: no answer in {args.wait:.0f}s, cancelled", flush=True)
     finally:
         subprocess.run(["pkill", "-CONT", "-f", "dnn[.]matchmaker"])
-        STATE.parent.mkdir(parents=True, exist_ok=True)
-        STATE.write_text(json.dumps(asked, indent=1))
+        _save(asked)
     return tried
 
 
