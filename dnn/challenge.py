@@ -108,10 +108,11 @@ def main() -> None:
         run_round(args)
         return
     sent: list[float] = []
+    per_round = args.max
     while True:
         sent = [t for t in sent if time.time() - t < 86400]
         if len(sent) < args.daily:
-            args.max = min(args.max, args.daily - len(sent))
+            args.max = min(per_round, args.daily - len(sent))
             try:
                 sent += [time.time()] * run_round(args)
             except Exception as e:  # network trouble: try again next time
