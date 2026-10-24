@@ -14,6 +14,10 @@ if [ ! -d "$BOT_DIR/.venv" ]; then
   (cd "$BOT_DIR" && "$UV" venv -q --python 3.12 .venv && "$UV" pip install -q --python .venv/bin/python -r requirements.txt)
 fi
 sed "s|@ROOT@|$ROOT|g" "$ROOT/draughts-nn/bot/config.yml.template" > "$BOT_DIR/config.yml"
+# No chat commands: !name reveals the engine, !eval shows spectators (and so opponents) our evaluation.
+if ! grep -q "dnn: no chat commands" "$BOT_DIR/conversation.py"; then
+  sed -i '/^    def command(self, line, game, cmd):$/a\        return  # dnn: no chat commands' "$BOT_DIR/conversation.py"
+fi
 make -C "$ROOT/draughts-nn/engine" -j4 >/dev/null
 test -e "$ROOT/draughts-nn/nets/current.bin" || { echo "no nets/current.bin - train and promote a net first"; exit 1; }
 echo "lidraughts-bot ready in $BOT_DIR"
