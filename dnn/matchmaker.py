@@ -23,9 +23,18 @@ from dnn import lidraughts
 STATE = Path(__file__).parents[1] / "var" / "matchmaker.json"
 
 
+STANDARD_PERFS = ("ultraBullet", "bullet", "blitz", "rapid", "classical")
+
+
 def known_bots() -> list[str]:
+    """Bots listed on /player/bots that have played international (standard) draughts."""
     html = lidraughts._get(f"{lidraughts.BASE}/player/bots").text
-    return sorted(set(re.findall(r'href="/@/([A-Za-z0-9_-]+)"', html)))
+    out = []
+    for name in sorted(set(re.findall(r'href="/@/([A-Za-z0-9_-]+)"', html))):
+        perfs = lidraughts._get(f"{lidraughts.BASE}/api/user/{name}").json().get("perfs", {})
+        if any(perfs.get(p, {}).get("games", 0) > 0 for p in STANDARD_PERFS):
+            out.append(name)
+    return out
 
 
 def online(ids: list[str]) -> set[str]:
