@@ -20,6 +20,7 @@ constexpr int SCORE_WIN_MIN = SCORE_WIN - 1000;
 
 struct Limits {
   double time = -1, inc = 0, move_time = -1;  // seconds
+  bool has_clock = false;  // a clock was given (time may be <= 0 when nearly flagged)
   int moves_to_go = 0;
   int depth = MAX_PLY - 1;
   uint64_t nodes = 0;

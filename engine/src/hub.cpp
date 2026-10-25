@@ -173,7 +173,10 @@ int run_hub() {
       if (a.count("depth")) limits.depth = std::clamp(std::stoi(a["depth"]), 1, MAX_PLY - 1);
       if (a.count("nodes")) limits.nodes = std::stoull(a["nodes"]);
       if (a.count("move-time")) limits.move_time = std::stod(a["move-time"]);
-      if (a.count("time")) limits.time = std::stod(a["time"]);
+      if (a.count("time")) {
+        limits.time = std::stod(a["time"]);
+        limits.has_clock = true;
+      }
       if (a.count("inc")) limits.inc = std::stod(a["inc"]);
       if (a.count("moves")) limits.moves_to_go = std::stoi(a["moves"]);
       if (a.count("infinite")) limits.infinite = true;

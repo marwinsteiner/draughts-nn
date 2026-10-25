@@ -316,13 +316,15 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
   double soft = 0, hard = 0;
   if (limits.move_time > 0) {
     soft = hard = std::max(0.01, limits.move_time - 0.02);
-  } else if (limits.time > 0) {
+  } else if (limits.has_clock) {
+    // The GUI may pass a clock at or below zero, or a negative increment (lidraughts-bot
+    // subtracts its lag allowance from both): always end with a small positive budget.
     const double overhead = 0.15;  // network lag reserve
     const double left = std::max(0.02, limits.time - overhead);
+    const double inc = std::max(0.0, limits.inc);
     const int mtg = limits.moves_to_go > 0 ? limits.moves_to_go : 30;
-    soft = left / mtg + 0.75 * limits.inc;
-    soft = std::min(soft, left * 0.25);
-    hard = std::min(soft * 3.5, left * 0.4);
+    soft = std::max(0.005, std::min(left / mtg + 0.75 * inc, left * 0.25));
+    hard = std::max(soft, std::min(soft * 3.5, left * 0.4));
   }
   soft_ = soft;
   hard_ = hard;
