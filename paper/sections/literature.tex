@@ -1,3 +1,170 @@
 \section{Literature Review}\label{sec:lit}
 
-To be written.
+Programs that play board games have been built for more than seventy years, and
+draughts has been part of that story from the start. This section follows four
+threads that lead to our engine: the early idea that a machine could play a game
+of skill at all (\cref{sec:lit-origins}); the long line of programs for checkers,
+the $8\times8$ form of draughts (\cref{sec:lit-checkers}); the move from
+hand-written evaluation rules to evaluation functions that are learned, in
+checkers and in chess, backgammon, shogi and Go (\cref{sec:lit-learning}); and
+the engines built for international draughts, the $10\times10$ game we play
+(\cref{sec:lit-international}).
+
+\subsection{Early ideas}\label{sec:lit-origins}
+
+The idea that a machine could play a game of skill is older than the electronic
+computer. \textcite{babbage1864} describes how he worked out that a machine could
+play noughts and crosses, and argues that a machine could in principle play any
+game of pure skill, chess included, by examining the moves available to it.
+
+The plan that every later engine follows was written down by
+\textcite{shannon1950}. A program should look ahead through the possible moves
+of both players, building a tree of positions, and judge the positions at the end
+of each line with an evaluation function, a formula that turns a position into a
+number saying how good it is for one side. The program then assumes that each
+player picks the move that is best for them, which is the minimax rule, and plays
+the move at the root that leads to the best result under that assumption. Shannon
+also pointed out that the full tree of chess is far too large to search, so a
+program must either stop at a fixed depth or look only at promising moves.
+\textcite{turing1953} described a chess procedure of the same kind, simple enough
+to be carried out by hand. The most important technique for making such searches
+faster is alpha-beta pruning, which skips branches that cannot change the result;
+\textcite{knuth1975} gave its first full analysis, and our search
+(\cref{sec:search}) is built on it.
+
+\subsection{Checkers}\label{sec:lit-checkers}
+
+The first program to play a complete game of draughts was written by Christopher
+Strachey for the Ferranti Mark 1 computer in Manchester and was running by the
+summer of 1952. He presented it at the Association for Computing Machinery
+meeting in Toronto that year \parencite{strachey1952}. It looked a few moves
+ahead and chose the move that seemed best after that limited look-ahead.
+
+Arthur Samuel at IBM went one step further and wrote the first checkers program
+that learned to play better \parencite{samuel1959}. Its evaluation function was a
+weighted sum of board features chosen by Samuel, such as the material balance
+and the control of the centre. The program adjusted the weights while playing
+against itself: it compared the value its evaluation gave a position with the
+value a deeper search later found for the same position, and moved the weights so
+that the two agreed better. This idea of training a quick judgement to match the
+result of a deeper look is the same idea we use when we train our network on
+Scan's search scores (\cref{sec:data}). Samuel's program also stored positions it
+had already evaluated so it did not have to repeat the work, and his paper is one
+of the earliest uses of the term machine learning. In 1962 the program won a
+widely reported game against Robert Nealey, but later analysis showed that Nealey
+played weak moves in that game and that the program was far from master
+strength \parencite{schaeffer1997}. Samuel's later version replaced the weighted
+sum with signature tables, which let features combine in non-linear ways, and
+used alpha-beta pruning, but it still could not beat checkers masters
+\parencite{samuel1967}.
+
+The program that finally reached the top was Chinook, built by Jonathan
+Schaeffer's group at the University of Alberta
+\parencite{schaeffer1992,schaeffer1996}. Chinook combined a deep alpha-beta
+search, an evaluation function tuned by hand with expert knowledge, a book of
+opening moves, and endgame databases that store the exact result of every
+position with few enough pieces left on the board. In 1992 it played a match for
+the world title against Marion Tinsley, who won four games, lost two and drew 33.
+This was the first time a human world champion had defended a title against a
+computer. In the 1994 rematch Tinsley withdrew because of illness after six drawn
+games, and Chinook became the first program to hold a human world championship
+title \parencite{schaeffer1996}. The work culminated in the proof that checkers
+is a draw: with perfect play by both sides, neither can win
+\parencite{schaeffer2007}. The proof combined endgame databases for all positions
+with ten or fewer pieces with a search from the starting position, and computers
+had been working on it almost continuously since 1989.
+
+\subsection{Learned evaluation functions}\label{sec:lit-learning}
+
+Chinook's strength came from search and from human knowledge written into its
+evaluation function. A parallel line of work asked whether a program could learn
+a good evaluation function with little or no human knowledge.
+
+In backgammon, \textcite{tesauro1995} trained a neural network by letting it play
+against itself and nudging its evaluation of each position towards its evaluation
+of the next position, a method called temporal difference learning. The program,
+TD-Gammon, reached the level of the best human players.
+
+In checkers, \textcite{chellapilla1999} trained neural networks by evolution
+rather than by gradient descent. Each network took the board as 32 numbers, one
+per playable square, passed them through two hidden layers of 40 and 10 units, and
+produced one number that served as the evaluation inside a minimax search. The
+value of a king relative to a man was evolved as well. A population of networks
+played games against each other, the networks that scored best survived, and
+their copies were changed by small random mutations to form the next generation.
+No human games and no expert features were used, only the win, loss or draw of
+each game. Later versions added a first layer that looked at every square
+sub-region of the board separately, and after about 840 generations the best
+network played at expert level against people on an internet gaming site
+\parencite{chellapilla2001,fogel2002}. This work was the starting point of our
+project: our first prototype, kept in the repository, reimplemented their
+32--40--10--1 network, the evolved king value and the tournament selection for
+$8\times8$ checkers.
+
+In chess, the strongest programs of the 1990s took the opposite route to
+learning. Deep Blue beat the world champion Garry Kasparov in a match in 1997,
+using special-purpose hardware to search hundreds of millions of positions per
+second with a large evaluation function tuned by hand
+\parencite{campbell2002}.
+
+The game of Go resisted this approach, because its positions are hard to judge
+with hand-written rules. AlphaGo combined deep neural networks with Monte Carlo
+tree search: a policy network suggested promising moves, a value network judged
+positions, and both were trained first on human games and then by self-play
+\parencite{silver2016}. It was the first program to beat a professional Go
+player in an even game. AlphaGo Zero removed the human games and learned from
+self-play alone \parencite{silver2017}, and AlphaZero applied the same method to
+chess, shogi and Go and beat the strongest existing program in each
+\parencite{silver2018}.
+
+These systems need large networks and much computing power to evaluate each
+position. A different design, built for programs that search many positions per
+second on an ordinary processor, came from computer shogi. \textcite{nasu2018}
+proposed an efficiently updatable neural network, now usually called NNUE, whose
+first layer does not have to be recomputed after every move. Most of a position
+is unchanged by a move, so the first layer is updated by adding and subtracting
+the contributions of the few pieces that moved. This keeps a neural evaluation
+cheap enough to use inside a fast alpha-beta search. Our network follows this
+design (\cref{sec:network}).
+
+A related idea is to train a small model to reproduce the outputs of a larger or
+stronger one, known as knowledge distillation \parencite{hinton2015}. We use the
+same principle with a strong draughts engine as the teacher: our network learns
+to predict the search scores of Scan (\cref{sec:training}).
+
+\subsection{International draughts}\label{sec:lit-international}
+
+International draughts is played on a $10\times10$ board with 20 pieces a side.
+Kings move any distance along a diagonal, and a player must make the capture that
+takes the most pieces. Positions therefore have more moves and longer capture
+sequences than in checkers, and the game has not been solved.
+
+Programs for the $10\times10$ game appeared later than for checkers. Draughts
+was part of the first Computer Olympiad in London in 1989, where the papers
+included a draughts program that learned from its own play
+\parencite{smeets1989} and a discussion of draughts programming by Derek
+Oldbury, a former world checkers champion \parencite{oldbury1989}, and the
+$10\times10$ game has been played at the Olympiad since then. Truus, by Stef Keetman, won silver at the first Olympiad and gold at the
+third, in Maastricht in 1991 \parencite{cpw_keetman}, and other strong programs
+of the following decades include Buggy, Dam, Damage, Dragon and the
+international version of Kingsrow \parencite{cpw_draughts}. In 2012 the former
+world champion Alexander Schwarzman played a six-game match against the program
+Maximus, winning one game and drawing the other five \parencite{vanhorssen2012}.
+
+The strongest freely available engine today is Scan by Fabien Letouzey, which won
+the draughts tournament of the 18th Computer Olympiad in Leiden in 2015
+\parencite{cpw_draughts}. Scan is an alpha-beta engine with a fast evaluation
+function, an opening book and endgame bitbases, and it is released as open
+source together with the Hub protocol through which programs and graphical
+interfaces talk to draughts engines \parencite{letouzey_scan}. The online platform
+lidraughts.org, where our engine plays, uses Scan to analyse games
+\parencite{lidraughts}.
+
+Our engine sits where these threads meet. Like Chinook and Scan, it relies on a
+fast alpha-beta search. Like Samuel's program and the work of Chellapilla and
+Fogel, it learns its evaluation function instead of having it written by hand.
+Like NNUE, it uses a small network whose first layer is updated incrementally, so
+that the evaluation stays cheap enough for deep search. Unlike the systems above,
+its training targets come from a stronger engine acting as a teacher rather than
+from human games or from self-play alone, and it keeps learning after it is
+deployed, from every game it loses against people on a public server.
