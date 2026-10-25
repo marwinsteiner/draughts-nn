@@ -93,7 +93,8 @@ def main() -> None:
     ap.add_argument("--bot", required=True)
     ap.add_argument("--idle", type=float, default=2, help="minutes without a game before challenging")
     ap.add_argument("--wait", type=float, default=90, help="seconds a bot gets to accept")
-    ap.add_argument("--wait-human", type=float, default=300, help="seconds a human gets to accept")
+    ap.add_argument("--wait-human", type=float, default=15,
+                    help="seconds a human gets to accept (lidraughts marks API challenges offline after 10s)")
     ap.add_argument("--cooldown", type=float, default=120, help="minutes to leave a bot alone after it ignored us")
     ap.add_argument("--per-bot-daily", type=int, default=40)
     ap.add_argument("--human-daily", type=int, default=6, help="max challenges to humans per day in total")
