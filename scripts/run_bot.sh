@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Start (detached) the lidraughts bot, the learn-from-loss watcher, the human
-# challenge watcher and the
-# bot matchmaker on the training box. Needs ~/.lidraughts_token (bot:play scope)
-# and DNN_BOT_NAME. Logs go to draughts-nn/logs/.
+# Start (detached) the lidraughts bot, the learn-from-loss watcher, the bot
+# matchmaker and the human challenge watcher on the training box. Needs
+# ~/.lidraughts_token (bot:play scope) and DNN_BOT_NAME. Logs go to draughts-nn/logs/.
 #   DNN_BOT_NAME=MyBot bash draughts-nn/scripts/run_bot.sh [--upgrade]
 set -euo pipefail
 ROOT="${DNN_ROOT:-$HOME/draughts}"
