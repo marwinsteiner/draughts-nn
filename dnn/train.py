@@ -49,14 +49,20 @@ def resolve_specs(specs: list[str], seed: int = 0) -> list[Path]:
 
 
 def load_chunks(files: list[Path], max_positions: int | None = None) -> dict[str, np.ndarray]:
-    parts: dict[str, list[np.ndarray]] = {"pos": [], "score": [], "result": [], "chunk": []}
+    """Each distinct file is loaded once; a file listed k times gets repeat = k, which is
+    applied to the training index list only (no duplicated data in memory)."""
+    counts: dict[Path, int] = {}
+    for f in files:
+        counts[f] = counts.get(f, 0) + 1
+    parts: dict[str, list[np.ndarray]] = {"pos": [], "score": [], "result": [], "chunk": [], "repeat": []}
     total = 0
-    for i, f in enumerate(files):
+    for i, (f, k) in enumerate(counts.items()):
         z = np.load(f)
         parts["pos"].append(z["pos"])
         parts["score"].append(z["score"])
         parts["result"].append(z["result"])
         parts["chunk"].append(np.full(len(z["score"]), i, np.int32))
+        parts["repeat"].append(np.full(len(z["score"]), k, np.uint8))
         total += len(z["score"])
         if max_positions and total >= max_positions:
             break
@@ -150,7 +156,8 @@ def main() -> None:
     target = torch.from_numpy(
         args.lam / (1 + np.exp(-d["score"].astype(np.float32) / k))
         + (1 - args.lam) * (d["result"].astype(np.float32) + 1) / 2).to(dev)
-    tr_idx = torch.from_numpy(np.flatnonzero(~is_val)).to(dev)
+    tr = np.flatnonzero(~is_val)
+    tr_idx = torch.from_numpy(np.repeat(tr, d["repeat"][tr])).to(dev)
     va_idx = torch.from_numpy(np.flatnonzero(is_val)).to(dev)
     print(f"train {len(tr_idx)} / val {len(va_idx)}", flush=True)
 
