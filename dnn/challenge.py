@@ -110,6 +110,56 @@ def _run_round(args: argparse.Namespace) -> int:
     return tried
 
 
+def challenge_users(names: list[str], args: argparse.Namespace) -> None:
+    """Challenge specific players in order (on explicit request, so the 24h rule does not
+    apply). Offline or busy players are skipped; after an accepted challenge, wait for that
+    game to finish before moving on to the next name."""
+    B = lidraughts.BASE
+    auth = {"Authorization": "Bearer " + (Path.home() / ".lidraughts_token").read_text().strip(), **lidraughts.UA}
+    base, _, inc = args.tc.partition("+")
+
+    def games_now() -> list[str]:
+        res = requests.get(f"{B}/api/account/playing", headers=auth, timeout=30).json()
+        return [g.get("gameId") for g in res.get("nowPlaying", [])]
+
+    asked = json.loads(STATE.read_text()) if STATE.exists() else {}
+    for name in names:
+        while games_now():
+            time.sleep(15)
+        st = lidraughts._get(f"{B}/api/users/status", params={"ids": name}).json()
+        if not st or not st[0].get("online") or st[0].get("playing"):
+            print(f"{name}: {'offline' if not st or not st[0].get('online') else 'in a game'}, skipped", flush=True)
+            continue
+        subprocess.run(["pkill", "-STOP", "-f", "dnn[.]matchmaker"])
+        try:
+            asked[name.lower()] = time.time()
+            _save(asked)
+            r = requests.post(f"{B}/api/challenge/{name}", headers=auth, timeout=30,
+                              data={"rated": "true", "clock.limit": base, "clock.increment": inc or "0",
+                                    "variant": "standard", "color": "random"})
+            if r.status_code >= 400:
+                print(f"{name}: not challengeable: {r.text[:120]}", flush=True)
+                continue
+            cid = r.json().get("challenge", {}).get("id") or r.json().get("id")
+            print(f"{time.strftime('%H:%M:%S')} challenged {name} {cid}", flush=True)
+            t0, ok = time.time(), False
+            while time.time() - t0 < args.wait:
+                time.sleep(8)
+                if cid in games_now():
+                    ok = True
+                    break
+            if not ok:
+                requests.post(f"{B}/api/challenge/{cid}/cancel", headers=auth, timeout=30)
+                print(f"{name}: no answer in {args.wait:.0f}s, cancelled", flush=True)
+                continue
+            print(f"{name} ACCEPTED: {B}/{cid}", flush=True)
+        finally:
+            subprocess.run(["pkill", "-CONT", "-f", "dnn[.]matchmaker"])
+        while cid in games_now():
+            time.sleep(15)
+        print(f"{time.strftime('%H:%M:%S')} game {cid} finished", flush=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max", type=int, default=3)
@@ -120,7 +170,11 @@ def main() -> None:
     ap.add_argument("--watch", action="store_true")
     ap.add_argument("--interval", type=float, default=10, help="minutes between checks (--watch)")
     ap.add_argument("--daily", type=int, default=8, help="max human challenges per 24h (--watch)")
+    ap.add_argument("--users", help="comma-separated players to challenge in order (explicit request)")
     args = ap.parse_args()
+    if args.users:
+        challenge_users([u.strip() for u in args.users.split(",") if u.strip()], args)
+        return
     if not args.watch:
         run_round(args)
         return
