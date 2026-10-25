@@ -3,7 +3,8 @@
     python -m dnn.learn watch --bot <BotName>             # poll forever
     python -m dnn.learn lesson --game <lidraughts id>     # run one lesson by hand
 
-For each lost game against a human:
+For each game against a human that was lost, or drawn against a player rated
+DRAW_LESSON_GAP or more below us:
  1. analyse  - Scan (deep, LESSON_NODES) scores every position of the game; a bot
                move that drops Scan's evaluation by >= MISTAKE_MEN is a mistake.
  2. data     - every quiet position of the game, plus Scan self-play
@@ -59,6 +60,7 @@ GATE_GAMES = 200
 GATE_TC = "5+0.05"
 GATE_MIN_SCORE = 0.49
 GATE_WORKERS = 12
+DRAW_LESSON_GAP = 200  # draws vs humans rated this much lower also trigger a lesson
 
 if os.environ.get("DNN_LEARN_QUICK"):  # pipeline smoke test
     LESSON_NODES, BRANCH_GAMES, BASE_CHUNKS, GATE_GAMES = 100_000, 6, 5, 20
@@ -361,7 +363,11 @@ def watch(bot: str, interval: int, workers: int) -> None:
                 f.write(json.dumps(g) + "\n")
             me = "white" if bot_color(g, bot) == "W" else "black"
             lost = g["winner"] is not None and g["winner"] != me
-            if lost and is_human(g, bot, raw) and raw.get("status") not in ("aborted", "noStart"):
+            # A draw against a much weaker player is a failure too: it costs rating like a loss.
+            opp = "black" if me == "white" else "white"
+            gap = (g.get(f"{me}_rating") or 0) - (g.get(f"{opp}_rating") or 0)
+            weak_draw = g["winner"] is None and gap >= DRAW_LESSON_GAP
+            if (lost or weak_draw) and is_human(g, bot, raw) and raw.get("status") not in ("aborted", "noStart"):
                 state["pending"].append(g)
             state["since"] = max(state["since"] or 0, raw.get("createdAt", 0) + 1)
         save_state(state)
