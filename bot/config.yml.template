@@ -32,8 +32,10 @@ correspondence:
   ponder: false
 challenge:
   concurrency: 1
-  block_list:            # challenges and rematch offers from these players are declined ("later")
-    - Mamss123           # 13 straight wins; further games no longer move the rating
+  block_list: []         # challenges and rematch offers from these players are declined ("later")
+  bot_name: "@BOT@"
+  max_human_streak: 10   # decline a human whose challenges filled our last 10 games ...
+  human_streak_cooldown_min: 120  # ... until 2h after the last of them (playing anyone else resets it)
   sort_by: "best"
   accept_bot: true
   only_bot: false
