@@ -18,6 +18,18 @@ sed "s|@ROOT@|$ROOT|g" "$ROOT/draughts-nn/bot/config.yml.template" > "$BOT_DIR/c
 if ! grep -q "dnn: no chat commands" "$BOT_DIR/conversation.py"; then
   sed -i '/^    def command(self, line, game, cmd):$/a\        return  # dnn: no chat commands' "$BOT_DIR/conversation.py"
 fi
+# Block list: decline challenges (incl. rematch offers) from players in challenge.block_list.
+"$BOT_DIR/.venv/bin/python" - "$BOT_DIR/model.py" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p).read()
+anchor = "    def is_supported(self, config):\n        try:\n"
+check = ('            if self.challenger_name.lower() in [n.lower() for n in config.get("block_list") or []]:'
+         '  # dnn: block_list\n                return False, "later"\n')
+if "dnn: block_list" not in s:
+    assert anchor in s, "lidraughts-bot model.py changed; update the block_list patch"
+    open(p, "w").write(s.replace(anchor, anchor + check, 1))
+PY
 make -C "$ROOT/draughts-nn/engine" -j4 >/dev/null
 test -e "$ROOT/draughts-nn/nets/current.bin" || { echo "no nets/current.bin - train and promote a net first"; exit 1; }
 echo "lidraughts-bot ready in $BOT_DIR"

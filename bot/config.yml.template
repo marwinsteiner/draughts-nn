@@ -32,6 +32,8 @@ correspondence:
   ponder: false
 challenge:
   concurrency: 1
+  block_list:            # challenges and rematch offers from these players are declined ("later")
+    - Mamss123           # 13 straight wins; further games no longer move the rating
   sort_by: "best"
   accept_bot: true
   only_bot: false
