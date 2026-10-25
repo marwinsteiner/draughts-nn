@@ -45,12 +45,8 @@ challenge:
   min_base: 0
   variants:
     - standard
-  time_controls:
-    - ultraBullet
-    - bullet
+  time_controls:         # blitz only: the rating we are pushing (other speeds were accepted by mistake until 2026-10-25)
     - blitz
-    - rapid
-    - classical
   modes:
     - casual
     - rated
