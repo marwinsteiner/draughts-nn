@@ -16,7 +16,7 @@ engine:
   hub_options:
     nnue: "@ROOT@/draughts-nn/nets/current.bin"
     tt-size: 512
-    threads: 4
+    threads: 2           # per game; up to `concurrency` games run at once
     search-log: "@ROOT@/draughts-nn/var/searchlog.jsonl"
     opening-random-plies: 10
   silence_stderr: false
@@ -31,7 +31,7 @@ correspondence:
   disconnect_time: 300
   ponder: false
 challenge:
-  concurrency: 1
+  concurrency: 4
   block_list: []         # challenges and rematch offers from these players are declined ("later")
   bot_name: "@BOT@"
   max_human_streak: 10   # decline a human whose challenges filled our last 10 games ...
