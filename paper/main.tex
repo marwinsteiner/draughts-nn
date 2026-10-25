@@ -1,0 +1,55 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[style=authoryear,backend=biber,maxcitenames=2,uniquename=false,uniquelist=false]{biblatex}
+\addbibresource{references.bib}
+\renewcommand*{\nameyeardelim}{\addcomma\space}  % Harvard: (Author, Year)
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=blue!60!black,urlcolor=blue!60!black]{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+
+\newcommand{\clip}{\operatorname{clip}}
+\newcommand{\sigm}{\sigma}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+  {\LARGE\bfseries A Neural-Network Engine for International Draughts\\[0.3em]
+  that Learns from a Teacher and from Its Losses\par}
+  \vspace{1.5cm}
+  {\large Marwin Steiner\par}
+  \vspace{0.5cm}
+  {\large \today\par}
+  \vspace{2cm}
+  \begin{minipage}{0.85\textwidth}
+    \centering\textbf{Abstract}\\[0.5em]
+    \raggedright
+    To be written.
+  \end{minipage}
+  \vfill
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+
+\input{sections/introduction}
+\input{sections/literature}
+\input{sections/method}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{section}{References}
+\printbibliography[title={References}]
+
+\end{document}

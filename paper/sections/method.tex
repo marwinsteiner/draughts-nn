@@ -1,0 +1,367 @@
+\section{Method}\label{sec:method}
+
+Our engine has two parts. A \emph{search} looks ahead through possible moves, and a
+small \emph{neural network} judges how good a position is once the search stops
+looking further. The network is trained to imitate the judgement of Scan, a strong
+existing draughts engine \parencite{letouzey_scan}, which we use only as a teacher
+and sparring partner; the playing engine never calls Scan. After the engine is
+deployed, it keeps learning: every game it loses is turned into extra training
+data. This section describes, in order, the game and its rules
+(\cref{sec:rules}), how the engine stores positions and finds legal moves
+(\cref{sec:board}), the network (\cref{sec:network}), the search
+(\cref{sec:search}), the training data (\cref{sec:data}), how the network is
+trained (\cref{sec:training}), how two versions of the engine are compared
+(\cref{sec:arena}), and how the engine learns from its losses
+(\cref{sec:learning}).
+
+\subsection{The game}\label{sec:rules}
+
+We play international draughts \parencite{fmjd_rules}. The board has $10\times10$
+squares, of which only the 50 dark squares are used. They are numbered 1 to 50,
+row by row, starting from the top-left dark square as seen by White. White's
+twenty pieces start on squares 31--50 and Black's on squares 1--20; White moves
+first. Every piece starts as a \emph{man}.
+
+\begin{itemize}[nosep]
+  \item A man moves one square diagonally forward. White men move towards
+        squares 1--5, Black men towards squares 46--50.
+  \item A man captures by jumping over a diagonally adjacent enemy piece onto the
+        empty square directly behind it. Men may capture forwards and backwards.
+  \item A \emph{king} moves any number of empty squares along a diagonal. It
+        captures an enemy piece at any distance along a diagonal, provided all
+        squares between them are empty, and may land on any empty square behind
+        that piece.
+  \item A capture may continue with further jumps by the same piece. Capturing
+        is compulsory, and a player must choose a sequence that captures the
+        largest possible number of pieces (men and kings count the same).
+  \item Captured pieces are removed only after the whole sequence is finished,
+        and no piece may be jumped twice. The capturing piece may pass through,
+        or end on, its own starting square.
+  \item A man becomes a king only if it \emph{ends} its move on the far row.
+  \item A player with no legal move loses.
+\end{itemize}
+
+Two capture sequences with the same start square, end square and set of captured
+pieces count as one move.
+
+\paragraph{Draw rules.} We use the draw rules of the server the engine plays on,
+lidraughts.org, taken from its source code \parencite{lidraughts}. The game keeps
+a counter $c$ of plies (single moves by one player) since the last \emph{reset},
+and a limit $L$ that depends on the material on the board:
+\begin{itemize}[nosep]
+  \item $L=10$ if one player has a single king and nothing else, and the other
+        player has at most two pieces, at least one of them a king;
+  \item $L=32$ if one player has a single king and nothing else, and the other
+        player has three pieces, at least one of them a king;
+  \item $L=50$ otherwise (in particular whenever more than four pieces remain).
+\end{itemize}
+After every move $L$ is recomputed. If $L=50$, the counter resets to 0 when the
+move was a capture or moved a man (including a man that promotes), and otherwise
+grows by one; so 50 plies of king moves without a capture end the game. If
+$L<50$, the counter resets only for the move that \emph{created} the endgame
+and otherwise grows by one, whatever is moved. A move creates the endgame if it
+is a capture made while more than 3 pieces (for $L=10$) or more than 4 pieces
+(for $L=32$) were on the board, or a promotion after which the moving player has
+exactly one king. The game
+is drawn when $c \ge L$, or when the same position, with the same player to move,
+has occurred three times since the last reset.
+
+\subsection{Positions and move generation}\label{sec:board}
+
+A position is stored as three 64-bit integers: one bit set for every white piece,
+one for every black piece, and one for every king, plus the side to move. Square
+$s$ is stored in bit
+\begin{equation}\label{eq:bit}
+  b(s) = (s-1) + \left\lfloor \tfrac{1}{2}\left\lfloor \tfrac{s-1}{5}\right\rfloor \right\rfloor ,
+\end{equation}
+which leaves one unused bit after every two rows (bits 10, 21, 32 and 43). With
+this layout the four diagonal neighbours of any square are always at bit offsets
+$-6$, $-5$, $+5$ and $+6$, and a step that would leave the board lands on an
+unused bit or outside bits 0--53. Each position also carries a 64-bit hash key,
+the exclusive-or of a fixed random number for every (colour, piece type, square)
+that is occupied and one for the side to move \parencite{zobrist1970}.
+
+Legal moves are generated as follows. First, for every own piece, all capture
+sequences are found by depth-first search: from the current square, try each of
+the four directions; for a man, the neighbouring square must hold an enemy piece
+not yet captured in this sequence and the square behind it must be empty; for a
+king, slide over empty squares to the first piece, which must be such an enemy
+piece, and then try every empty landing square behind it. During the search the
+moving piece is treated as absent from its start square, and already-captured
+pieces stay on the board as obstacles. A sequence ends when no further jump is
+possible. Only sequences with the largest number of captures are kept, and
+duplicates (same start, end and captured set) are removed. If no capture exists,
+the legal moves are the ordinary moves of men and kings.
+
+The move generator was checked in two ways: the number of move sequences from
+the start position (``perft'') matches published values up to depth 9
+(41{,}022{,}423 sequences), and its legal moves agree with an independent
+implementation, the pydraughts library, on every position of many random games.
+
+\subsection{The evaluation network}\label{sec:network}
+
+\paragraph{Input.} The network looks at the board twice: once from White's point
+of view and once from Black's. For a point of view $p$ we build a vector
+$x_p \in \{0,1\}^{200}$ with one entry for every combination of piece type
+$t$ and square:
+\[
+  t = 0:\ \text{own man},\quad t = 1:\ \text{own king},\quad
+  t = 2:\ \text{opponent man},\quad t = 3:\ \text{opponent king},
+\]
+where ``own'' means belonging to player $p$. Black's view is the board turned
+by 180 degrees, so that both players' men always move towards the same end of
+their own view. A piece on square $s$ therefore sets entry
+\begin{equation}\label{eq:feature}
+  i = 50\,t + r - 1, \qquad r = \begin{cases} s & \text{for White's view},\\ 51 - s & \text{for Black's view},\end{cases}
+\end{equation}
+of $x_p$ to 1. All other entries are 0.
+
+\paragraph{Layers.} Write $\clip(z) = \min(\max(z,0),1)$, applied to every entry
+of a vector, and $\sigm(z) = 1/(1+e^{-z})$. Let $m$ be the player to move and
+$n$ the other player. The network computes
+\begin{align}
+  a_p &= W_1 x_p + b_1 \quad \text{for } p \in \{m, n\}, \label{eq:l1}\\
+  h_1 &= \clip\bigl([\,a_m;\ a_n\,]\bigr), \label{eq:concat}\\
+  h_2 &= \clip(W_2 h_1 + b_2), \label{eq:l2}\\
+  h_3 &= \clip(W_3 h_2 + b_3), \label{eq:l3}\\
+  o   &= w_4^{\top} h_3 + b_4 . \label{eq:out}
+\end{align}
+The first layer $W_1 \in \mathbb{R}^{256\times200}$ is shared by both points of
+view, so $a_m$ and $a_n$ are 256 numbers each. In \cref{eq:concat} the two are
+stacked, the player to move first, giving 512 inputs to the second layer. The
+remaining sizes are $W_2 \in \mathbb{R}^{32\times512}$,
+$W_3 \in \mathbb{R}^{32\times32}$ and $w_4 \in \mathbb{R}^{32}$.
+
+\paragraph{Output.} The output $o$ is read as the chance that the player to move
+wins, $\sigm(o)$. Inside the search the engine needs a score in hundredths of a
+man (``centi-men''); it uses
+\begin{equation}\label{eq:score}
+  v = \operatorname{trunc}(K\,o), \quad \text{limited to } [-5000,\,5000],
+\end{equation}
+where $K$ is the scale fixed during training (\cref{eq:k}). With $K=130$, a score
+of $+130$ corresponds to $\sigm(1)\approx 0.73$: the player to move is expected to
+score about 73\% (a draw counting as half a win).
+
+\paragraph{Fast evaluation during search.} The vectors $a_m, a_n$ of
+\cref{eq:l1} are the expensive part, but a move changes only a few entries of
+$x_p$. The engine therefore keeps $a_{\text{White}}$ and $a_{\text{Black}}$ for
+every position on the search path and updates them when a move is made: for each
+point of view it subtracts the column of $W_1$ belonging to the moving piece on
+its start square, adds the column for the piece on its end square (as a king if
+it promotes), and subtracts the column of every captured piece. The result is
+identical to computing \cref{eq:l1} from scratch. The second layer
+(\cref{eq:l2}) is computed with 8-bit integers on processors that support it:
+each input is rounded to $q = \operatorname{round}(255\,h_1) \in \{0,\dots,255\}$,
+each weight to $Q = \operatorname{round}(s\,W_2)$ with $s = 127/\max|W_2|$, and the
+pre-activation is recovered as $\sum q\,Q / (255\,s) + b_2$. All other steps use
+32-bit floating point. A test checks that the engine's scores differ from those
+of the training code by at most 3 centi-men or 2\% of the largest score in the
+test, whichever is larger.
+
+\subsection{Search}\label{sec:search}
+
+To choose a move the engine runs a negamax alpha-beta search
+\parencite{knuth1975}: it explores the tree of possible continuations, always
+from the point of view of the player to move, and skips branches that cannot
+change the result. The engine receives the game as the start position plus the
+list of all moves played, and replays them to know the draw counter and which
+positions have occurred since the last reset. Scores are in centi-men; a draw scores 0, and a position where
+the player to move has no legal move at $d$ plies from the root scores
+$-(10000 - d)$, so that faster wins score higher.
+
+\paragraph{Iterative deepening.} The search is run to depth 1, then 2, 3 and so
+on, each time reusing what earlier iterations stored in a hash table. From depth
+4 on, each iteration first searches a narrow window of $\pm30$ around the previous
+iteration's score; if the true score falls outside, the window is widened on that
+side by doubling its width until it fits. If the root has only one legal move,
+the engine plays it at once.
+
+\paragraph{One node of the search.} At a node at distance $d$ from the root, with
+remaining depth $D$ and score window $(\alpha,\beta)$, the engine does the
+following:
+\begin{enumerate}[nosep]
+  \item If the position is drawn by the rules of \cref{sec:rules}, return 0. In
+        the search any repetition of a position since the last reset already
+        counts as a draw.
+  \item If $D \le 0$, return the quiescence search below.
+  \item Narrow $(\alpha,\beta)$ to the scores still possible at distance $d$
+        (no win can come sooner than at $d+1$ and no loss sooner than at $d$);
+        if the window becomes empty, return $\alpha$.
+  \item Look the position up in the hash table. Outside the main line, if the
+        stored result came from a search at least $D$ deep and settles the
+        window, return it.
+  \item Generate the legal moves. With none, return $-(10000-d)$.
+  \item If there is exactly one legal move, search it one ply deeper
+        ($D$ is not reduced).
+  \item Order the moves: the move stored in the hash table first; then
+        captures (those taking more kings first); then two ``killer'' moves that
+        recently caused a cut-off at this distance from the root
+        \parencite{akl1977}; then the rest by a history score
+        \parencite{schaeffer1989}.
+  \item Search the first move with the full window and every later move with a
+        zero-width window around $\alpha$, re-searching with the full window if
+        it turns out better \parencite{marsland1982}. A non-capturing,
+        non-promoting later move is searched 1 ply shallower when $D\ge2$ and
+        it is at least the 2nd move in the order (the 4th on the main line),
+        and 2 plies shallower when it is at least the 5th move off the main
+        line; if such a move scores above $\alpha$, it is searched again at
+        full depth.
+  \item As soon as a move scores at least $\beta$, stop. If it was not a
+        capture, make it this node's first killer move (the old first killer
+        becomes the second) and add $D^2$ to its history score.
+  \item Store the best score, the best move, $D$ and whether the score is exact,
+        a lower bound or an upper bound in the hash table.
+\end{enumerate}
+The hash table is organised in groups of five entries; a new entry replaces the
+entry for the same position, else an empty one, else the one with the smallest
+depth minus four times its age (in searches). History scores are divided by 8
+at the start of every search and halved when one exceeds $2^{20}$.
+
+\paragraph{Quiescence search.} At depth 0 the position may still be in the middle
+of an exchange, so the network is not asked yet. If the player to move must
+capture, every capture is searched (there is no option to stop, because
+capturing is compulsory). Otherwise the network score $e$ is taken. It is
+returned as the result if $e \ge \beta$, if the opponent could not capture
+anything were it their turn, or if this is not the first quiet position reached
+in the quiescence search. In the remaining case (the opponent threatens a capture
+right at the horizon) every legal move is searched one ply further, with $e$ as
+the score to beat.
+
+\paragraph{Time.} Given the remaining clock time $T$ (in seconds) and increment
+$I$, the engine plans to use $t_{\text{soft}} = \min\bigl((T-0.15)/30 + 0.75\,I,\
+(T-0.15)/4\bigr)$ and never more than $t_{\text{hard}} =
+\min(3.5\,t_{\text{soft}},\ 0.4\,(T-0.15))$. A new iteration is not started
+after $0.6\,t_{\text{soft}}$, and a running one is abandoned at
+$t_{\text{hard}}$, in which case the result of the last finished iteration is
+played.
+
+\paragraph{Live play.} On lidraughts the engine runs with four threads. Three
+helper threads search the same position without a time limit and share the hash
+table; the move comes from the main thread, and the helpers stop when it
+finishes. The engine also thinks during the opponent's turn on the move it
+expects. To avoid playing the same opening in every game, during the first 10
+plies of a game, and only if less than 80\% of the planned time
+$t_{\text{soft}}$ has been used, the engine re-scores every legal move with a search of depth
+$\min(D_{\text{last}}-2,\ 8)$, where $D_{\text{last}}$ is the depth of its last
+finished iteration, and plays a uniformly random move among those within 15
+centi-men of the best.
+
+\subsection{Training data}\label{sec:data}
+
+Every training example is a position together with two labels, both from the
+point of view of the player to move: a \emph{teacher score} $S$ in centi-men
+(Scan's evaluation after searching the position, limited to $[-3000,3000]$) and
+the \emph{game result} $R\in\{+1,0,-1\}$ (win, draw or loss of the game the
+position came from). We only keep \emph{quiet} positions, in which the player to
+move has no capture and more than one legal move; positions in the middle of an
+exchange are left to the search.
+
+\paragraph{Teacher self-play.} Scan plays games against itself, with its opening
+book switched off (as in all our uses of Scan). Each game starts
+with $k$ uniformly random legal moves, with $k$ drawn uniformly from
+$\{2,\dots,8\}$. Then, on every move, Scan searches the position for a fixed
+number of nodes $N$; the position is recorded with Scan's score if it is quiet,
+and Scan's move is played, except that with probability 0.01 a uniformly random
+legal move is played instead. A game ends when a player has no legal move, by
+the draw rules of \cref{sec:rules}, as a draw after 300 plies, or as a win when
+Scan's score has been at least 1500 in favour of the same player for 6
+consecutive plies. We generated two sets: 400{,}000 games with $N=100{,}000$
+(44.6 million positions) and a second set with $N=1{,}000{,}000$, a ten times
+deeper search (7.3 million positions when the current network was trained).
+
+\paragraph{Human games.} We downloaded rated games of the 100 highest-rated
+players on each lidraughts leaderboard (blitz, bullet, rapid, classical), up to
+their 1000 most recent games each, keeping games of standard draughts from the
+normal start position. From games in which both players were rated at least 1800
+we took every quiet position, scored it with Scan at $N=100{,}000$, and attached
+the game's result (a loss on time counts as a loss), which gave about 1.3
+million positions.
+
+\paragraph{Lessons.} Games the engine lost produce further examples, described
+in \cref{sec:learning}.
+
+\subsection{Training}\label{sec:training}
+
+\paragraph{Score scale.} The teacher score $S$ is turned into a win probability
+by $\sigm(S/K)$. The scale $K$ is chosen once, as the value in
+$\{50, 55, \dots, 795\}$ for which $\sigm(S/K)$ best predicts the game results
+of the first two million training positions:
+\begin{equation}\label{eq:k}
+  K = \arg\min_{K} \; -\frac{1}{N}\sum_{j=1}^{N}
+      \Bigl[ y_j \log \sigm(S_j/K) + (1-y_j) \log\bigl(1-\sigm(S_j/K)\bigr) \Bigr],
+  \qquad y_j = \tfrac{R_j+1}{2}.
+\end{equation}
+This gives $K=130$.
+
+\paragraph{Target and loss.} Each position gets the target
+\begin{equation}\label{eq:target}
+  y^{*} = \lambda\, \sigm(S/K) + (1-\lambda)\, \frac{R+1}{2}, \qquad \lambda = 0.75,
+\end{equation}
+a mix of mostly the teacher's opinion and partly the actual outcome. The network
+is trained to make $\sigm(o)$ (\cref{eq:out}) close to $y^{*}$, using the mean
+squared error $\bigl(\sigm(o)-y^{*}\bigr)^2$ averaged over a batch.
+
+\paragraph{Procedure.} Training uses the Adam optimiser \parencite{kingma2015}
+with batches of 16{,}384 positions for 15 passes over the data. The learning rate
+follows a one-cycle schedule \parencite{smith2019}: it rises to $10^{-3}$ over the
+first 5\% of steps and then decreases. The data are stored in files of whole
+games; 2\% of the files are held out for validation, so no game is split between
+training and validation, and after every pass the network with the lowest
+validation loss so far is kept. A data source can be given a repeat factor $k$,
+which makes each of its positions appear $k$ times per pass. The network
+currently playing was trained on the 44.6 million teacher positions (factor 1)
+together with the human positions, the deeper teacher positions and the lesson
+positions (factor 2 each).
+
+\subsection{Comparing two engines}\label{sec:arena}
+
+Two versions of the engine are compared by playing matches. Each opening is a
+sequence of 4 uniformly random legal moves from the start position (each opening
+position distinct), and each opening is played twice with colours swapped.
+Both sides play on a clock of 5 seconds plus 0.05 seconds per move. A game is
+lost by a player with no legal move or a player whose clock falls below
+$-0.5$ seconds, and is drawn by the draw rules or after 300 plies. The match score
+$P$ is the average over games of 1 for a win, $\tfrac12$ for a draw and 0 for a
+loss, and the strength difference in Elo is
+\begin{equation}\label{eq:elo}
+  \Delta = -400 \log_{10}\!\left(\frac{1}{P} - 1\right).
+\end{equation}
+
+\subsection{Learning from losses}\label{sec:learning}
+
+\paragraph{Lessons from a lost game.} Whenever the engine loses a game against a
+human on lidraughts, the following runs automatically.
+\begin{enumerate}[nosep]
+  \item \emph{Analysis.} Scan scores every position of the game, searching
+        2{,}000{,}000 nodes each.
+  \item \emph{Mistakes.} One of the engine's moves is a mistake if Scan would
+        have played a different move and Scan's score drops by at least 0.3 men
+        across it: the score before the move minus the (sign-flipped) score of
+        the position after it.
+  \item \emph{Lesson data.} The lesson contains every quiet position of the game
+        with its 2{,}000{,}000-node score and the game's result, plus Scan
+        self-play games (as in \cref{sec:data}, with $N=100{,}000$, no random
+        opening moves and probability 0.03 of a random move) started 13 times
+        from each mistake position and 13 times from each of the two positions
+        before it.
+  \item \emph{Fine-tuning.} Starting from the current network, train for 3
+        passes with a peak learning rate of $2\times10^{-4}$, the same $K$ and
+        $\lambda$, on 200 randomly chosen files of teacher self-play data plus
+        the lesson with repeat factor 8.
+  \item \emph{Check.} The fine-tuned network plays a 200-game match against the
+        current one (\cref{sec:arena}). It replaces the current network only if
+        it scores at least 49\%, so that a single game cannot make the engine
+        noticeably weaker. The engine loads the network afresh at the start of
+        each game.
+\end{enumerate}
+
+\paragraph{Sparring against the teacher.} The same procedure is also run in
+rounds against Scan. In each round the current network plays 100 games against
+Scan (\cref{sec:arena}). The first 12 lost games are analysed as above,
+ignoring the 4 random opening moves; games without a mistake give no lesson. The network is then fine-tuned on all
+lessons collected so far, from sparring and from human games, each with repeat
+factor 4, plus 600 randomly chosen files of teacher self-play data. The result
+replaces the current network only if it scores at least 52.5\% in a 400-game
+match against it. Each network that becomes the current one is measured once
+against Scan on the same 400 games (fixed openings), so that networks can be
+compared with each other.
