@@ -322,8 +322,14 @@ SearchInfo Searcher::run(const Root& root, const Limits& limits,
     const double overhead = 0.15;  // network lag reserve
     const double left = std::max(0.02, limits.time - overhead);
     const double inc = std::max(0.0, limits.inc);
-    const int mtg = limits.moves_to_go > 0 ? limits.moves_to_go : 30;
-    soft = std::max(0.005, std::min(left / mtg + 0.75 * inc, left * 0.25));
+    // Without a real increment the clock never refills, and every move also costs
+    // ~0.2-0.3s of network/bridge overhead outside the engine: plan for more moves
+    // (draughts games often run 60-90 moves a side) and keep a per-move reserve.
+    const bool low_inc = inc < 0.5;
+    const int mtg = limits.moves_to_go > 0 ? limits.moves_to_go : (low_inc ? 50 : 30);
+    const double lag_reserve = low_inc ? 0.3 * std::min(mtg, 40) : 0.0;
+    const double usable = std::max(0.0, left - lag_reserve);
+    soft = std::max(0.005, std::min(usable / mtg + 0.75 * inc, left * 0.25));
     hard = std::max(soft, std::min(soft * 3.5, left * 0.4));
   }
   soft_ = soft;

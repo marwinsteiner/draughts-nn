@@ -39,3 +39,10 @@ def test_clock_at_or_below_zero_moves_at_once():
 
 def test_normal_clock_still_thinks():
     assert think("level time=60 inc=2") > 0.5
+
+
+def test_no_increment_banks_time_for_overhead():
+    # 3+0 with 12s left: the per-move lag reserve (0.3s x 40) leaves nothing to spend
+    assert think("level time=12 inc=0") < 0.2
+    # early in a 3+0 game: at most ~(180-12)/50 = 3.4s
+    assert think("level time=180 inc=0") < 3.6
