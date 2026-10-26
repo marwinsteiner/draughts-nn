@@ -1,3 +1,40 @@
 \section{Conclusion}\label{sec:concl}
 
-To be written.
+We built an engine for international draughts that combines a conventional
+alpha-beta search with a small neural network trained to imitate Scan, and
+deployed it on lidraughts.org as valhalla. In three days of blitz it played 127
+games. It did not lose to a human: against 16 players rated up to 2293 it won 71
+games and drew 5. It needed only a handful of games to be rated above almost every
+player on the site, and it now stands above 99.98\% of the month's blitz players,
+with one human on the leaderboard rated higher. Its strength against humans comes
+from consistency rather than insight: the humans made the mistakes that decided
+the games, mostly in the middlegame, and the engine made almost none. Against
+other programs nearly every game was drawn, and against Scan the engine is still
+about 93 Elo weaker. Learning from individual games added little measurable
+strength; retraining on more varied data added more.
+
+The most direct next step is to train on the engine's own positions. Positions
+from Scan playing itself do not cover the positions valhalla reaches in its own
+games, and we are generating such data now: games played by the engine, against
+itself and against Scan, with every position scored by Scan. A second step is a
+faster search. In our measurements the engine searches about a third as many
+positions per second as Scan on the same machine, so a faster move generator and
+evaluation would let the same network look further ahead. Since most draws ended
+with four or fewer pieces on the board, endgame databases, which store the exact
+result of every position with few pieces, would tell the engine which advantages
+can be won and which cannot.
+
+Two changes concern how the engine is improved and how it plays for rating. A
+sequential test, which keeps playing until the difference between two networks
+is clear, would stop networks that are no better from replacing the current one
+more reliably than a fixed 200-game match with a 49\% threshold. And because a
+draw against a much lower-rated human costs many times what a win earns, the
+engine could prefer positions that keep winning chances alive over safe but
+drawish ones when its opponent is much weaker.
+
+Two further ideas go beyond the present design. The engine's strength is
+currently bounded by Scan, whose judgement it imitates; self-play reinforcement
+learning, as in AlphaZero \parencite{silver2018}, could take it beyond its
+teacher, at a much higher cost in computation. Finally, blitz favours the engine.
+Games at slower time controls, and against the site's highest-rated players,
+would show how much of its advantage over humans is due to time pressure.
