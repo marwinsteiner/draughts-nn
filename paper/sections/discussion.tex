@@ -1,3 +1,93 @@
 \section{Discussion}\label{sec:disc}
 
-To be written.
+The engine is far stronger than the humans it met and clearly weaker than Scan.
+This section explains how both can be true, why the engine's games against other
+programs are almost always drawn, what this means for its rating, what learning
+from losses has and has not achieved, and where the results should be read with
+care.
+
+\subsection{Why humans lose}\label{sec:disc-humans}
+
+The engine does not beat humans by out-thinking them in the opening. While more
+than 30 pieces are on the board the two sides play about equally well
+(\cref{fig:errors}). The difference is consistency. In the middlegame and
+endgame the humans gave away three to five times as much per move as the engine,
+and every so often lost a man or more in a single move, which the engine did not
+do once in more than three thousand moves. A human playing blitz has a few
+seconds per move and will sooner or later overlook a capture sequence; the
+engine checks every capture sequence on every move. Once a game was decided, the
+engine converted it: no human game it was winning by a man or more ended in a
+draw. Its results against humans correspond to a performance rating of about
+2640 (a 96.7\% score against opponents averaging 2049, by \cref{eq:elo}), almost
+200 points above its actual rating.
+
+\subsection{Why engines draw}\label{sec:disc-draws}
+
+Against bots the picture reverses. Neither side made errors large enough to
+lose, and 44 of 51 games were drawn. This is a property of the game as much as of
+the players. The $8\times8$ form of draughts has been proven a draw with perfect
+play \parencite{schaeffer2007}. International draughts has not been solved, but
+it shows the same tendency: even in our benchmark against Scan, an opponent about
+93 Elo stronger, 47\% of games were drawn, and when Scan and valhalla played out
+12 positions in which valhalla had judged itself a man ahead, each taking the
+better side in turn, not one of the 48 games was won. A small advantage in draughts is usually not
+enough. With fewer pieces the defending side can often reach one of the endgames
+in which the draw rules of \cref{sec:rules} end the game after 5 or 16 moves, and
+most of the drawn games ended exactly that way (\cref{tab:endings}). Between
+strong programs, a stronger engine therefore turns into a higher score only
+slowly: it wins slightly more often, but it mostly draws.
+
+\subsection{What limits the rating}\label{sec:disc-rating}
+
+A Glicko-2 rating settles where the score a player is expected to make matches the
+score it actually makes. Against an opponent rated 400 points lower the expected
+score is about 91\%, and against one rated 600 points lower about 97\%. In
+practice this made draws expensive and wins cheap. Once its rating was
+established, a win against a human rated around 2050 earned the engine between 1
+and 8 points, and by the end only 1 or 2. Each of the three draws against humans
+rated about 300 to 460 points lower cost it between 8 and 28 points. A
+single such draw undid several wins. Draws against bots rated
+around 2400 held the rating near that level. The rating is therefore limited less
+by how the engine plays than by who it plays: to climb further it must score
+nearly 100\% against humans, draw almost never, and win some of its games against
+the other bots, which, as \cref{sec:disc-draws} explains, is difficult in a game
+this drawish. A rating far above the best human players would require opponents
+who are rated far above them as well, and the site does not have them.
+
+\subsection{Learning from losses}\label{sec:disc-learning}
+
+Because the engine never lost to a human, the lesson procedure of
+\cref{sec:learning} ran only for draws against much weaker humans (an extension
+we added during the experiment) and for losses in the sparring rounds against
+Scan. Its effect on strength is small and hard to measure. A 200-game match can
+only detect differences of about 30 Elo or more, so the acceptance rule of 49\%
+lets through networks that are no better than the one they replace: champ\_005
+scored within 3 Elo of champ\_004 against Scan (\cref{tab:scan}). The sparring
+rounds against Scan gave three accepted networks, each scoring between 51.5\%
+and 53\% against its predecessor, and then six rounds in a row that were
+rejected. The largest gain came instead from training a new network from scratch
+on more varied data (v2, 20 Elo against Scan). More data of the same kind did
+not help: v3, trained like v2 but with the deeper Scan self-play set grown from
+7.3 to 11.1 million positions, was weaker. This suggests that what the network lacks is not more examples, but
+examples from the positions it actually reaches in its own games, which Scan's
+self-play does not cover. The two losses on the board point the same way: the
+engine was not caught by a single oversight but slowly outplayed in the
+middlegame, which suggests a weakness in its judgement of quiet positions rather
+than in its calculation.
+
+\subsection{Limitations}\label{sec:disc-limits}
+
+The results cover three days and 127 games. The 76 games against humans were
+played against 16 players, two of whom account for 46 games, and the strongest
+of them was rated 2293. The highest-rated humans we challenged did not accept, so the claim that no human has beaten the engine holds for players
+rated up to about 2300. All games were blitz, where humans make more mistakes
+than with more time to think; the gap between engine and humans is likely smaller
+at slower time controls. The opponents chose to play a bot, which may not make
+them representative of the site's players. The analysis of how games were
+decided relies on Scan, which is also the engine's teacher, so the two may share
+blind spots; its scores carry noise from a finite search, and the thresholds we
+used (one man for a decided game, 30 and 15 pieces between opening, middlegame
+and endgame) are our own choices. Finally, three of the five losses were caused
+by a fault in the engine's time management rather than by its play; they say
+little about its strength but show that a deployed engine must be tested against
+the conditions of the server, not only against itself.
