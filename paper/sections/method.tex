@@ -5,14 +5,15 @@ small neural network judges how good a position is once the search stops
 looking further. The network is trained to imitate the judgement of Scan, a strong
 existing draughts engine \parencite{letouzey_scan}, which we use only as a teacher
 and sparring partner; the playing engine never calls Scan. After the engine is
-deployed, it keeps learning: every game it loses is turned into extra training
-data. This section describes, in order, the game and its rules
+deployed, it keeps learning: every game it loses against a human, and every draw
+against a much weaker one, is turned into extra training data. This section describes, in order, the game and its rules
 (\cref{sec:rules}), how the engine stores positions and finds legal moves
 (\cref{sec:board}), the network (\cref{sec:network}), the search
 (\cref{sec:search}), the training data (\cref{sec:data}), how the network is
 trained (\cref{sec:training}), how two versions of the engine are compared
-(\cref{sec:arena}), and how the engine learns from its losses
-(\cref{sec:learning}).
+(\cref{sec:arena}), how the engine learns from its losses
+(\cref{sec:learning}), and how it finds opponents on lidraughts
+(\cref{sec:deploy}).
 
 \subsection{The game}\label{sec:rules}
 
@@ -218,18 +219,29 @@ search. In the remaining case, when the opponent threatens a capture right at th
 horizon, every legal move is searched one ply further, with $e$ as the score to
 beat.
 
-Given the remaining clock time $T$ in seconds and the increment $I$, the engine
-plans to use $t_{\text{soft}} = \min\bigl((T-0.15)/30 + 0.75\,I,\
-(T-0.15)/4\bigr)$ and never more than $t_{\text{hard}} =
-\min(3.5\,t_{\text{soft}},\ 0.4\,(T-0.15))$. A new iteration is not started
-after $0.6\,t_{\text{soft}}$, and a running one is abandoned at
-$t_{\text{hard}}$, in which case the result of the last finished iteration is
-played.
+The engine is told the time $T$ left on its clock and the increment $I$, both in
+seconds. It first keeps 0.15 seconds in reserve, $T' = \max(0.02,\ T-0.15)$, and
+treats a negative increment as zero. Every move also costs time outside the
+engine, for sending it over the network, and without an increment that time is
+never given back. So when $I<0.5$ the engine plans for $m=50$ more moves and sets
+aside a further $r = 0.3\min(m,40) = 12$ seconds; otherwise it plans for $m=30$
+moves with $r=0$. It then plans to use
+\begin{equation}\label{eq:time}
+  t_{\text{soft}} = \max\Bigl(0.005,\ \min\bigl(\max(0,\,T'-r)/m + 0.75\,I,\
+  T'/4\bigr)\Bigr)
+\end{equation}
+and never more than $t_{\text{hard}} = \max\bigl(t_{\text{soft}},\
+\min(3.5\,t_{\text{soft}},\ 0.4\,T')\bigr)$. In a game of 3 minutes without
+increment, for example, the first move is planned to take about 3.4 seconds. A
+new iteration is not started after $0.6\,t_{\text{soft}}$, and a running one is
+abandoned at $t_{\text{hard}}$, in which case the result of the last finished
+iteration is played.
 
-On lidraughts the engine runs with four threads. Three helper threads search the
-same position without a time limit and share the hash table; the move comes from
-the main thread, and the helpers stop when it finishes. The engine also thinks
-during the opponent's turn about the move it expects. To avoid playing the same
+On lidraughts the engine plays up to four games at once and uses two threads in
+each. The helper thread searches the same position without a time limit and
+shares the hash table; the move comes from the main thread, and the helper stops
+when it finishes. The engine also thinks during the opponent's turn about the
+move it expects. To avoid playing the same
 opening in every game, during the first 10 plies of a game, and only if less than
 80\% of the planned time $t_{\text{soft}}$ has been used, the engine re-scores
 every legal move with a search of depth $\min(D_{\text{last}}-2,\ 8)$, where
@@ -296,8 +308,8 @@ and then decreases. The data are stored in files of whole games; 2\% of the file
 are held out for validation, so no game is split between training and
 validation, and after every pass the network with the lowest validation loss so
 far is kept. A data source can be given a repeat factor $k$, which makes each of
-its positions appear $k$ times per pass. The network currently playing was
-trained on the 44.6 million teacher positions (factor 1) together with the human
+its positions appear $k$ times per pass. The network that played most of the
+games reported in \cref{sec:results} (v2) was trained on the 44.6 million teacher positions (factor 1) together with the human
 positions, the deeper teacher positions and the lesson positions (factor 2 each).
 
 \subsection{Comparing two engines}\label{sec:arena}
@@ -316,8 +328,10 @@ strength difference in Elo is
 
 \subsection{Learning from losses}\label{sec:learning}
 
-Whenever the engine loses a game against a human on lidraughts, a lesson runs
-automatically. First, Scan scores every position of the game, searching
+Whenever the engine loses a game against a human on lidraughts, or draws against
+a human rated at least 200 points below it, a lesson runs automatically. A draw
+of the second kind costs rating much as a loss does
+(\cref{sec:disc-rating}), so it is treated as one. First, Scan scores every position of the game, searching
 2{,}000{,}000 nodes each. One of the engine's moves counts as a mistake if Scan
 would have played a different move and Scan's score drops by at least 0.3 men
 across it, that is, the score before the move minus the sign-flipped score of the
@@ -335,7 +349,8 @@ randomly chosen files of teacher self-play data plus the lesson with repeat
 factor 8. The fine-tuned network plays a 200-game match against the current one
 (\cref{sec:arena}) and replaces it only if it scores at least 49\%, so that a
 single game cannot make the engine noticeably weaker. The engine loads the network
-afresh at the start of each game.
+afresh at the start of each game. The networks that have played on lidraughts are
+numbered in the order in which they took over: champ\_000, champ\_001, and so on.
 
 The same procedure is also run in rounds against Scan. In each round the current
 network plays 100 games against Scan (\cref{sec:arena}). The first 12 lost games
@@ -346,3 +361,23 @@ randomly chosen files of teacher self-play data. The result replaces the current
 network only if it scores at least 52.5\% in a 400-game match against it. Each
 network that becomes the current one is measured once against Scan on the same
 400 games, with fixed openings, so that networks can be compared with each other.
+
+\subsection{Playing on lidraughts}\label{sec:deploy}
+
+The engine plays under a lidraughts BOT account, which cannot join the site's
+public list of game offers and only plays games it is challenged to or
+challenges others to. It accepts challenges to rated or unrated blitz games from
+humans and bots. To spread its games over many opponents, it declines a human
+whose challenges filled its last 10 games, until two hours after the last of
+them. It never resigns, never offers a draw and does not use the game chat.
+
+Two programs challenge other players. The first looks every 3 minutes, among the
+200 highest-rated blitz players, for humans rated at least 1900 who are online
+and not playing. It challenges them one at a time, strongest first, to a rated
+game of 3 minutes plus 2 seconds per move, and withdraws each challenge that is
+not accepted within 15 seconds. It stops at the first acceptance, after 5
+challenges, or as soon as the engine is playing. Each human is challenged at most
+once in 24 hours, and at most 60 humans per day. The second program, whenever the
+engine has been idle for 2 minutes, challenges humans who have played the engine
+before (at most 6 a day) and the other bots that play international draughts. In
+addition, we challenged a few players by hand.
