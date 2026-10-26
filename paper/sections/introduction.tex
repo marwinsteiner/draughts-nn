@@ -1,3 +1,41 @@
 \section{Introduction}\label{sec:intro}
 
-To be written.
+Board games have long served as a test of whether machines can learn and plan.
+Programs now play checkers perfectly \parencite{schaeffer2007}, beat the best
+humans at chess \parencite{campbell2002}, and have mastered Go by learning from
+their own games \parencite{silver2016,silver2018}. International draughts, the
+$10\times10$ form of draughts played mainly in Europe and Africa, has strong
+programs too, the best freely available being Scan \parencite{letouzey_scan},
+but it has received far less attention from research on learning.
+
+This paper continues an earlier attempt of ours to teach a computer draughts with
+a neural network. That attempt followed \textcite{chellapilla1999}, who evolved
+networks for checkers through play alone, and it never reached a useful
+strength. Here we take a more direct route. Instead of discovering good play from
+scratch, our network learns from a teacher: it is trained to predict how Scan
+judges millions of positions, and it is then used inside a fast alpha-beta
+search, in the style of the efficiently updatable networks of computer shogi
+\parencite{nasu2018}.
+
+The engine is not only tested against other programs. Under the name valhalla it
+plays rated games against people on the public server lidraughts.org, where it is
+measured on the same rating scale as several thousand human players. Each game it
+loses against a human, or draws against a much weaker one, becomes a lesson: the
+positions where it went wrong are added to its training data, and a retrained
+network replaces the current one if it plays at least as well.
+
+We ask four questions. How strong is the engine against people, and how quickly
+does its rating show this? At what stage of the game are its games won, drawn and
+lost? How does it compare with its teacher? And does learning from individual
+games make it stronger? In three days of blitz the engine played 127 games. It
+won 71 and drew 5 of its 76 games against humans without a single loss, and after
+only nine games its rating was higher than that of 99.9\% of the site's blitz
+players. Against its teacher, however, it is still about 93 Elo weaker, and
+against other programs nearly every game was drawn.
+
+The rest of the paper is organised as follows. \Cref{sec:lit} reviews the history
+of game-playing programs from the first ideas to learned evaluation functions and
+international draughts, \cref{sec:method} describes the engine, its training and
+how it plays and learns on lidraughts, \cref{sec:results} reports its games,
+\cref{sec:disc} discusses what they show and where they fall short, and
+\cref{sec:concl} concludes with directions for future work.
