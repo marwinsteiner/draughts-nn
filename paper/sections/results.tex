@@ -1,3 +1,251 @@
 \section{Results}\label{sec:results}
 
-To be written.
+The engine plays on lidraughts.org under the name \emph{valhalla}. This section
+reports every game it played between 24 October 2026, 10:36 UTC (its first game),
+and 26 October 2026, 21:05 UTC: 133 games in total. We first list the games
+(\cref{sec:res-games}), then show how its rating developed and where that rating
+places it among the site's players (\cref{sec:res-rating}), how it fared
+against humans (\cref{sec:res-humans}) and against Scan (\cref{sec:res-scan}),
+and finally how its games were won, drawn and lost (\cref{sec:res-how}).
+
+\subsection{Games played}\label{sec:res-games}
+
+Lidraughts keeps a separate rating for each speed of play. We meant the engine to
+play blitz only, which on lidraughts means games with an estimated duration of
+roughly 3 to 8 minutes per player (3 minutes plus 2 seconds per move, for example).
+Through a configuration error on our part, the engine accepted challenges at every
+speed until 25 October, 20:13 UTC, and in that time played 6 games that were not
+blitz: 3 bullet games (faster) and 3 rapid games (slower). We report them in
+\cref{tab:record} for completeness and leave them out of everything else in this
+section. That leaves 127 blitz games: 76 against humans and 51 against three other
+bots (Adder, Virtual-Draughts and Viral-Bot), the only bots on the site that
+accept games of international draughts. The most common time controls were
+3 minutes with no increment (63 games) and 3 minutes plus 2 seconds per move
+(52 games). One blitz game was unrated.
+
+\begin{table}[ht]
+  \centering
+  \caption{All games played by valhalla, from its point of view. The score counts
+  a win as 1 and a draw as $\tfrac12$. The bottom two rows were played by mistake
+  and are excluded from all other results.}\label{tab:record}
+  \begin{tabular}{llrrrrr}
+    \toprule
+    Speed & Opponent & Games & Won & Drawn & Lost & Score \\
+    \midrule
+    Blitz & humans & 76 & 71 & 5 & 0 & 96.7\% \\
+    Blitz & bots   & 51 &  2 & 44 & 5 & 47.1\% \\
+    \midrule
+    Bullet and rapid & humans & 2 & 0 & 2 & 0 & 50.0\% \\
+    Bullet and rapid & bots   & 4 & 1 & 1 & 2 & 37.5\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Rating}\label{sec:res-rating}
+
+Lidraughts rates players with the Glicko-2 system \parencite{glickman2001}. Every
+new account starts at 1500 with a large uncertainty, and while the uncertainty is
+large each game moves the rating a lot; the site marks such a rating with a
+question mark (``provisional''). \Cref{fig:rating} shows valhalla's blitz rating
+after each rated blitz game, and \cref{fig:distribution} shows where it sits among
+the 6{,}308 players who played rated blitz on lidraughts in the past month
+\parencite{lidraughts_stats}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{rating}
+  \caption{valhalla's blitz rating after each rated blitz game. Colour shows the
+  result, shape the kind of opponent. Dashed lines mark percentiles of the monthly
+  blitz rating distribution of \cref{fig:distribution}; the solid line marks the
+  highest-rated player on the site's blitz leaderboard, which lists humans only.
+  Flat stretches among the bot games are rated games that the server nevertheless
+  did not count towards the rating, which lidraughts does for some games between
+  two bots.}\label{fig:rating}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{distribution}
+  \caption{Blitz ratings of the 6{,}308 players who played rated blitz on
+  lidraughts in the month to 26 October 2026 \parencite{lidraughts_stats}. Bars:
+  number of players in each 25-point band (left axis). Line: share of players
+  rated below a given rating (right axis). The solid vertical line is valhalla's
+  rating after its last game, the dashed one the highest-rated human on the
+  leaderboard.}\label{fig:distribution}
+\end{figure}
+
+The engine needed very few games to rise above almost every player on the site.
+After one game its rating (1830) was above 85\% of the monthly players; after 5
+games it was above 99\% of them, and after 9 games above 99.9\%. All of these
+games were against bots: its first game against a human was its 13th, by which
+time it was already rated 2304. Part of this speed is due to Glicko-2 itself,
+which moves a new player's rating quickly; but the rating did not fall back
+once the system had more confidence in it. The question mark disappeared after
+24 games, at 2407, and over the following 102 games the rating stayed between
+2395 and 2470.
+
+After its last game the engine was rated 2459, higher than 99.98\% of the
+monthly blitz players. On the blitz leaderboard, which lists human players only,
+one player is rated higher (2506); the next is rated 2400. The target we set
+ourselves, 2800, has not been reached.
+
+\subsection{Against humans}\label{sec:res-humans}
+
+No human player has beaten the engine. In 76 blitz games against 16 different
+players it won 71 and drew 5 (\cref{tab:record}). Its opponents were rated
+between 1950 and 2293 (median 2026) at the time of the game; the strongest of
+them, rated 2291--2293, played it three times, drawing twice and losing once.
+Of the 71 wins, 47 ended when the opponent resigned, 14 when the opponent ran out
+of time, and 10 when the opponent had no legal move left (\cref{tab:endings}).
+A won game against a human lasted a median of 90 plies, that is 45 moves by
+each player.
+
+\begin{table}[ht]
+  \centering
+  \caption{How the 127 blitz games ended. The draw rules are those of
+  \cref{sec:rules}: the 25-move rule ($L=50$), the 16-move rule ($L=32$) and the
+  5-move rule ($L=10$).}\label{tab:endings}
+  \begin{tabular}{llrr}
+    \toprule
+    Result & Ended by & vs humans & vs bots \\
+    \midrule
+    Won   & opponent resigned          & 47 & 0 \\
+          & opponent out of time       & 14 & 0 \\
+          & opponent had no legal move & 10 & 2 \\
+    \midrule
+    Drawn & 5-move rule                &  3 & 15 \\
+          & 16-move rule               &  2 & 12 \\
+          & threefold repetition       &  0 & 11 \\
+          & 25-move rule               &  0 &  6 \\
+    \midrule
+    Lost  & out of time                &  0 & 3 \\
+          & no legal move              &  0 & 2 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Against Scan}\label{sec:res-scan}
+
+To measure the engine against a fixed and much stronger opponent, we matched
+networks against Scan on the same 400 games (\cref{sec:arena,sec:learning}).
+The networks champ\_000 to champ\_003 played the first 20 games, up to
+25 October, 09:00 UTC; champ\_004 played from then on, except while a lesson had replaced it with
+champ\_005 or, from 26 October 18:11 UTC, with champ\_006, which has not yet been
+measured against Scan. \Cref{tab:scan} lists the results. The best network,
+champ\_004, scored 36.9\% against Scan, about 93 Elo below it. On this measure the engine is
+still clearly weaker than the program that taught it. Retraining from scratch on
+more and deeper data (v2) gained 20 Elo over the sparring fine-tunes; adding yet
+more of the same kind of data (v3) did not help.
+
+\begin{table}[ht]
+  \centering
+  \caption{Fixed 400-game benchmark against Scan at 5 seconds plus 0.05 seconds
+  per move. Elo differences by \cref{eq:elo}.}\label{tab:scan}
+  \small\setlength{\tabcolsep}{4pt}
+  \begin{tabular}{llrrrrrc}
+    \toprule
+    Network & Description & Won & Drawn & Lost & Score & Elo & 95\% interval \\
+    \midrule
+    champ\_003 & v1 after three sparring rounds     & 58 & 158 & 184 & 34.3\% & $-113$ & $[-141,-87]$ \\
+    champ\_004 & v2: full retrain on all data       & 54 & 187 & 159 & 36.9\% & $-93$  & $[-119,-69]$ \\
+    champ\_005 & champ\_004 after one human lesson  & 48 & 196 & 156 & 36.5\% & $-96$  & $[-121,-72]$ \\
+    v3         & v2 data + 11.1M deeper positions\textsuperscript{a} & 51 & 164 & 185 & 33.3\% & $-121$ & $[-148,-95]$ \\
+    \bottomrule
+    \multicolumn{8}{l}{\footnotesize\textsuperscript{a}\,Not deployed: it also scored 48.6\% against champ\_004 in 400 games.}
+  \end{tabular}
+\end{table}
+
+\subsection{How games were won, drawn and lost}\label{sec:res-how}
+
+To see what happened inside the games, we let Scan judge every position of every
+blitz game, searching 1{,}000{,}000 nodes per position, and express its
+evaluation in men from valhalla's point of view: $+1$ means valhalla is a man
+ahead, or has an advantage worth as much. Because draughts pieces only ever leave
+the board, the number of pieces on the board is a natural clock for the stage of
+the game. We call a position part of the opening while more than 30 of the 40
+pieces remain, part of the middlegame with 16 to 30 pieces, and part of the
+endgame with 15 or fewer. We call a won or lost game \emph{decided} from the
+first position after which the winner stayed at least one man ahead, by Scan's
+evaluation, until the end of the game (after smoothing the evaluation with a
+running median over five plies, so that a single noisy score does not move this
+point). \Cref{fig:trajectories} shows the evaluation over each game,
+\cref{fig:decided} the stage at which each game was decided or ended, and
+\cref{fig:errors} how much evaluation each side gave away per move.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{trajectories}
+  \caption{Scan's evaluation of every position of every blitz game, from
+  valhalla's point of view, cut off at $\pm5$ men. One line per game. Against
+  humans (blue) the evaluation stays level for about 50 plies and then turns
+  sharply in valhalla's favour; against bots (orange) it mostly stays close to
+  zero until the game is drawn.}\label{fig:trajectories}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{decided}
+  \caption{When the blitz games were decided, measured by the number of pieces
+  still on the board (the game runs from left to right). Wins and losses: the
+  position from which the winner stayed at least a man ahead. Draws: the final
+  position. ``Not decided on the board'' counts games won or lost on time, or
+  resigned, while Scan judged the position less than a man from level. Dashed
+  lines separate opening, middlegame and endgame.}\label{fig:decided}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{errors}
+  \caption{How much each side gave away per move, by stage of the game, in
+  positions that were still open (Scan's evaluation within $\pm2$ men before the
+  move). The loss of a move is the drop in Scan's evaluation, from the mover's
+  point of view, across that move (counted as 0 if the evaluation rose). Left:
+  mean loss per move. Right: share of moves that lost at least one man.}\label{fig:errors}
+\end{figure}
+
+\paragraph{Wins.} Against humans the games follow one pattern. Through the
+opening both sides play almost equally well, giving away 0.018 (valhalla) and
+0.028 (humans) men per move on average, and the evaluation stays level. In the
+middlegame the humans start to make mistakes: they give away 0.096 men per move
+against valhalla's 0.028, and 1.8\% of their moves lose a man or more at once. In
+the endgame this grows to 0.172 men per move and 4.2\% of moves. In 3{,}137
+moves in open positions against humans, valhalla did not make a single move that
+lost a man. Of the 71 wins, 65 were decided on the board, a median of 71 plies
+into the game with 18 pieces left (half of them between 16 and 24 pieces): 46 in
+the middlegame, 16 in the endgame and 3 in the opening. In 46 of these 65 games
+the move that decided the game was the human's own; in the other 19 it was a move
+by valhalla that turned a smaller advantage into one of at least a man. The 6
+wins not decided on the board are 4 games in which the human ran out of time in
+a level position and 2 in which the human resigned when about 0.9 men behind.
+
+\paragraph{Draws.} Against the bots almost every game was drawn (44 of 51). Here
+neither side gave much away: both valhalla and its bot opponents lost 0.012 to
+0.031 men per move at every stage, and hardly ever a whole man
+(\cref{fig:errors}). In 39 of the 44 draws valhalla was never a man ahead by
+Scan's judgement. These games were long (a median of 167 plies) and all ended in
+the endgame, with 2 to 8 pieces left (median 4), by the 5-move rule (15), the
+16-move rule (12), threefold repetition (11) or the 25-move rule (6). In 4 draws
+valhalla reached an advantage of at least 2 men and did not convert it. To check
+whether valhalla's endgame play was to blame, we took 12 positions from three
+draws against Virtual-Draughts in which valhalla's own search judged it at least
+a man ahead, and let Scan and valhalla play each of them twice with each colour
+(48 games at 5 seconds plus 0.05 seconds per move). All 48 games were drawn, so
+these advantages were most likely not enough to win. The 5 draws against humans
+also ended in endgames of 3 or 4 pieces; in none of them was valhalla more than
+0.9 men ahead.
+
+\paragraph{Losses.} All 7 losses (5 in blitz, 2 in the bullet games played by
+mistake) were against bots. Five of them were losses on time. All five were
+played on 25 October between 19:10 and 20:51 UTC against Viral-Bot, in games
+without an increment, and in all five Scan judged the position at the end to be
+within half a man of level. They were caused by a fault in the engine's time
+management that we fixed at about 21:00 UTC that day; none of the 73 games
+played since has been lost on time. The two losses on the board, one against
+Adder (24 October) and one against Viral-Bot (26 October), look alike: no single
+move lost a man, but valhalla's position slowly worsened through the middlegame
+until Scan judged it a man behind (from 20 and 26 pieces on the board
+respectively), and the game ended many moves later with valhalla left without a
+legal move. The second of these was played by champ\_006, a network that the
+lesson procedure of \cref{sec:learning} had put in place after it scored 49.5\%
+in its 200-game match against champ\_004; of its 27 games so far it has won 8,
+drawn 18 and lost this one.

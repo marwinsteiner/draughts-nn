@@ -1,0 +1,1516 @@
+{
+ "games": 133,
+ "scored": 133,
+ "rating": {
+  "final": 2459.0,
+  "games": 126,
+  "players_in_distribution": 6308,
+  "share_below_final": 0.9998414711477489,
+  "provisional_until_game": 24,
+  "passed": {
+   "median player": {
+    "rating": 1582,
+    "after_game": 1
+   },
+   "90th percentile": {
+    "rating": 1880,
+    "after_game": 4
+   },
+   "99th percentile": {
+    "rating": 2124,
+    "after_game": 5
+   },
+   "99.9th percentile": {
+    "rating": 2295,
+    "after_game": 9
+   }
+  },
+  "share_below_after": [
+   0.386,
+   0.8531,
+   0.8531,
+   0.8531,
+   0.9882,
+   0.9976,
+   0.9937,
+   0.9972,
+   0.9984,
+   0.9993,
+   0.9993,
+   0.9993,
+   0.9993,
+   0.9994,
+   0.9995,
+   0.9996,
+   0.9996,
+   0.9997,
+   0.9997,
+   0.9996,
+   0.9997,
+   0.9997,
+   0.9997,
+   0.9997,
+   0.9997,
+   0.9998,
+   0.9998,
+   0.9998,
+   0.9998,
+   0.9998
+  ],
+  "first_human_game": {
+   "game": 13,
+   "rating_before": 2304.0
+  }
+ },
+ "decisive_moves": [
+  {
+   "id": "f7otPf0Y",
+   "outcome": "L",
+   "bot": true,
+   "ply": 81,
+   "pieces": 20,
+   "by": "valhalla",
+   "swing": 0.27,
+   "status": "mate"
+  },
+  {
+   "id": "HWHcWwFb",
+   "outcome": "W",
+   "bot": false,
+   "ply": 66,
+   "pieces": 22,
+   "by": "opponent",
+   "swing": 0.31,
+   "status": "resign"
+  },
+  {
+   "id": "GHr6n6R7",
+   "outcome": "W",
+   "bot": false,
+   "ply": 84,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 1.12,
+   "status": "resign"
+  },
+  {
+   "id": "crYu1um4",
+   "outcome": "W",
+   "bot": false,
+   "ply": 47,
+   "pieces": 30,
+   "by": "opponent",
+   "swing": 0.28,
+   "status": "resign"
+  },
+  {
+   "id": "A9Wap1ny",
+   "outcome": "W",
+   "bot": false,
+   "ply": 70,
+   "pieces": 22,
+   "by": "valhalla",
+   "swing": 0.28,
+   "status": "resign"
+  },
+  {
+   "id": "u1Sh9HF0",
+   "outcome": "W",
+   "bot": false,
+   "ply": 42,
+   "pieces": 32,
+   "by": "valhalla",
+   "swing": 0.08,
+   "status": "resign"
+  },
+  {
+   "id": "ynFvBQe6",
+   "outcome": "W",
+   "bot": false,
+   "ply": 35,
+   "pieces": 30,
+   "by": "opponent",
+   "swing": 1.87,
+   "status": "resign"
+  },
+  {
+   "id": "LWVoDRpJ",
+   "outcome": "W",
+   "bot": false,
+   "ply": 91,
+   "pieces": 12,
+   "by": "opponent",
+   "swing": 4.72,
+   "status": "mate"
+  },
+  {
+   "id": "M2mT6jXr",
+   "outcome": "W",
+   "bot": false,
+   "ply": 86,
+   "pieces": 14,
+   "by": "opponent",
+   "swing": 3.49,
+   "status": "resign"
+  },
+  {
+   "id": "mxSP8mvG",
+   "outcome": "W",
+   "bot": false,
+   "ply": 74,
+   "pieces": 12,
+   "by": "valhalla",
+   "swing": 0.38,
+   "status": "resign"
+  },
+  {
+   "id": "jW10wruK",
+   "outcome": "W",
+   "bot": false,
+   "ply": 83,
+   "pieces": 17,
+   "by": "valhalla",
+   "swing": 0.12,
+   "status": "mate"
+  },
+  {
+   "id": "uchodyAB",
+   "outcome": "W",
+   "bot": false,
+   "ply": 75,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 1.26,
+   "status": "resign"
+  },
+  {
+   "id": "Sapb8JAW",
+   "outcome": "W",
+   "bot": false,
+   "ply": 81,
+   "pieces": 14,
+   "by": "valhalla",
+   "swing": 0.35,
+   "status": "mate"
+  },
+  {
+   "id": "UBHq9aqV",
+   "outcome": "W",
+   "bot": false,
+   "ply": 33,
+   "pieces": 34,
+   "by": "opponent",
+   "swing": 0.53,
+   "status": "resign"
+  },
+  {
+   "id": "R27KCpg8",
+   "outcome": "W",
+   "bot": false,
+   "ply": 70,
+   "pieces": 21,
+   "by": "opponent",
+   "swing": 0.64,
+   "status": "mate"
+  },
+  {
+   "id": "fDq4zc50",
+   "outcome": "W",
+   "bot": false,
+   "ply": 33,
+   "pieces": 28,
+   "by": "opponent",
+   "swing": 3.27,
+   "status": "resign"
+  },
+  {
+   "id": "lw3IA6hs",
+   "outcome": "W",
+   "bot": false,
+   "ply": 74,
+   "pieces": 20,
+   "by": "opponent",
+   "swing": 0.2,
+   "status": "resign"
+  },
+  {
+   "id": "vy9mF23f",
+   "outcome": "W",
+   "bot": false,
+   "ply": 54,
+   "pieces": 25,
+   "by": "valhalla",
+   "swing": 0.04,
+   "status": "resign"
+  },
+  {
+   "id": "B2FdJvW8",
+   "outcome": "W",
+   "bot": false,
+   "ply": 64,
+   "pieces": 20,
+   "by": "opponent",
+   "swing": 0.67,
+   "status": "resign"
+  },
+  {
+   "id": "rimYzxPk",
+   "outcome": "W",
+   "bot": false,
+   "ply": 91,
+   "pieces": 11,
+   "by": "opponent",
+   "swing": 0.58,
+   "status": "mate"
+  },
+  {
+   "id": "QuSwyCKV",
+   "outcome": "W",
+   "bot": false,
+   "ply": 90,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 0.35,
+   "status": "mate"
+  },
+  {
+   "id": "GQxtNyYA",
+   "outcome": "W",
+   "bot": false,
+   "ply": 72,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 0.37,
+   "status": "outoftime"
+  },
+  {
+   "id": "vhYmCDME",
+   "outcome": "W",
+   "bot": false,
+   "ply": 71,
+   "pieces": 14,
+   "by": "opponent",
+   "swing": 0.13,
+   "status": "resign"
+  },
+  {
+   "id": "ZXMHLHsG",
+   "outcome": "W",
+   "bot": false,
+   "ply": 54,
+   "pieces": 26,
+   "by": "opponent",
+   "swing": 0.97,
+   "status": "resign"
+  },
+  {
+   "id": "xLKcixor",
+   "outcome": "W",
+   "bot": false,
+   "ply": 98,
+   "pieces": 16,
+   "by": "opponent",
+   "swing": 2.04,
+   "status": "outoftime"
+  },
+  {
+   "id": "P0r5JQYa",
+   "outcome": "W",
+   "bot": true,
+   "ply": 69,
+   "pieces": 22,
+   "by": "valhalla",
+   "swing": 0.02,
+   "status": "mate"
+  },
+  {
+   "id": "gktmwI3w",
+   "outcome": "W",
+   "bot": false,
+   "ply": 82,
+   "pieces": 16,
+   "by": "opponent",
+   "swing": 0.1,
+   "status": "resign"
+  },
+  {
+   "id": "RJ4lsoxo",
+   "outcome": "W",
+   "bot": false,
+   "ply": 71,
+   "pieces": 20,
+   "by": "opponent",
+   "swing": 1.06,
+   "status": "resign"
+  },
+  {
+   "id": "J8KpDRA3",
+   "outcome": "W",
+   "bot": false,
+   "ply": 77,
+   "pieces": 18,
+   "by": "valhalla",
+   "swing": 0.29,
+   "status": "resign"
+  },
+  {
+   "id": "ygTDzD7P",
+   "outcome": "W",
+   "bot": false,
+   "ply": 59,
+   "pieces": 24,
+   "by": "opponent",
+   "swing": 0.74,
+   "status": "resign"
+  },
+  {
+   "id": "CcFKrPF8",
+   "outcome": "W",
+   "bot": false,
+   "ply": 58,
+   "pieces": 24,
+   "by": "valhalla",
+   "swing": 0.03,
+   "status": "outoftime"
+  },
+  {
+   "id": "6fdwlMEe",
+   "outcome": "W",
+   "bot": false,
+   "ply": 56,
+   "pieces": 26,
+   "by": "opponent",
+   "swing": 0.98,
+   "status": "resign"
+  },
+  {
+   "id": "ffo7vxQ2",
+   "outcome": "W",
+   "bot": false,
+   "ply": 64,
+   "pieces": 26,
+   "by": "opponent",
+   "swing": 1.38,
+   "status": "resign"
+  },
+  {
+   "id": "bYWNpjZg",
+   "outcome": "W",
+   "bot": false,
+   "ply": 85,
+   "pieces": 16,
+   "by": "opponent",
+   "swing": 0.1,
+   "status": "outoftime"
+  },
+  {
+   "id": "z8HPQV4j",
+   "outcome": "W",
+   "bot": false,
+   "ply": 64,
+   "pieces": 24,
+   "by": "opponent",
+   "swing": 0.77,
+   "status": "resign"
+  },
+  {
+   "id": "V0Gj5fob",
+   "outcome": "W",
+   "bot": false,
+   "ply": 58,
+   "pieces": 26,
+   "by": "valhalla",
+   "swing": 0.1,
+   "status": "resign"
+  },
+  {
+   "id": "uoAYe6aI",
+   "outcome": "W",
+   "bot": false,
+   "ply": 101,
+   "pieces": 14,
+   "by": "opponent",
+   "swing": 0.84,
+   "status": "resign"
+  },
+  {
+   "id": "pk4H01fO",
+   "outcome": "W",
+   "bot": false,
+   "ply": 62,
+   "pieces": 24,
+   "by": "opponent",
+   "swing": 1.54,
+   "status": "resign"
+  },
+  {
+   "id": "cSPjUakj",
+   "outcome": "W",
+   "bot": false,
+   "ply": 101,
+   "pieces": 10,
+   "by": "opponent",
+   "swing": 1.94,
+   "status": "resign"
+  },
+  {
+   "id": "52cVYtWe",
+   "outcome": "W",
+   "bot": false,
+   "ply": 81,
+   "pieces": 14,
+   "by": "valhalla",
+   "swing": 0.21,
+   "status": "resign"
+  },
+  {
+   "id": "JTXS6Pfg",
+   "outcome": "W",
+   "bot": false,
+   "ply": 85,
+   "pieces": 10,
+   "by": "opponent",
+   "swing": 1.74,
+   "status": "outoftime"
+  },
+  {
+   "id": "kx0L7yHJ",
+   "outcome": "W",
+   "bot": false,
+   "ply": 98,
+   "pieces": 12,
+   "by": "opponent",
+   "swing": 1.81,
+   "status": "outoftime"
+  },
+  {
+   "id": "szRMJdFp",
+   "outcome": "W",
+   "bot": false,
+   "ply": 69,
+   "pieces": 18,
+   "by": "valhalla",
+   "swing": 0.25,
+   "status": "resign"
+  },
+  {
+   "id": "SJhE3jbv",
+   "outcome": "W",
+   "bot": false,
+   "ply": 65,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 2.29,
+   "status": "resign"
+  },
+  {
+   "id": "75DzNzHh",
+   "outcome": "W",
+   "bot": false,
+   "ply": 79,
+   "pieces": 14,
+   "by": "valhalla",
+   "swing": 0.01,
+   "status": "resign"
+  },
+  {
+   "id": "cE7UOizS",
+   "outcome": "W",
+   "bot": false,
+   "ply": 87,
+   "pieces": 12,
+   "by": "opponent",
+   "swing": 0.4,
+   "status": "mate"
+  },
+  {
+   "id": "zx7mMnDg",
+   "outcome": "W",
+   "bot": false,
+   "ply": 70,
+   "pieces": 22,
+   "by": "opponent",
+   "swing": 0.69,
+   "status": "resign"
+  },
+  {
+   "id": "FfebtTGf",
+   "outcome": "W",
+   "bot": false,
+   "ply": 93,
+   "pieces": 16,
+   "by": "opponent",
+   "swing": 0.1,
+   "status": "resign"
+  },
+  {
+   "id": "AVy7c5K6",
+   "outcome": "W",
+   "bot": false,
+   "ply": 91,
+   "pieces": 12,
+   "by": "valhalla",
+   "swing": 0.14,
+   "status": "resign"
+  },
+  {
+   "id": "tQNzXP3R",
+   "outcome": "W",
+   "bot": false,
+   "ply": 69,
+   "pieces": 26,
+   "by": "valhalla",
+   "swing": 1.0,
+   "status": "mate"
+  },
+  {
+   "id": "QVpMrh0x",
+   "outcome": "W",
+   "bot": false,
+   "ply": 83,
+   "pieces": 18,
+   "by": "valhalla",
+   "swing": 0.28,
+   "status": "resign"
+  },
+  {
+   "id": "CqdKUedw",
+   "outcome": "W",
+   "bot": false,
+   "ply": 54,
+   "pieces": 21,
+   "by": "opponent",
+   "swing": 0.61,
+   "status": "mate"
+  },
+  {
+   "id": "loF3HRVj",
+   "outcome": "W",
+   "bot": false,
+   "ply": 65,
+   "pieces": 23,
+   "by": "opponent",
+   "swing": 2.1,
+   "status": "resign"
+  },
+  {
+   "id": "O2JGOqIS",
+   "outcome": "W",
+   "bot": false,
+   "ply": 49,
+   "pieces": 28,
+   "by": "opponent",
+   "swing": 1.02,
+   "status": "outoftime"
+  },
+  {
+   "id": "J6GMlWUm",
+   "outcome": "W",
+   "bot": false,
+   "ply": 69,
+   "pieces": 22,
+   "by": "valhalla",
+   "swing": 0.08,
+   "status": "resign"
+  },
+  {
+   "id": "HzZ2EoXp",
+   "outcome": "W",
+   "bot": false,
+   "ply": 57,
+   "pieces": 21,
+   "by": "valhalla",
+   "swing": 0.08,
+   "status": "resign"
+  },
+  {
+   "id": "uwLM335M",
+   "outcome": "W",
+   "bot": false,
+   "ply": 73,
+   "pieces": 16,
+   "by": "opponent",
+   "swing": 0.34,
+   "status": "outoftime"
+  },
+  {
+   "id": "nI7pxIzk",
+   "outcome": "W",
+   "bot": false,
+   "ply": 74,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 0.48,
+   "status": "outoftime"
+  },
+  {
+   "id": "1pkANaO0",
+   "outcome": "W",
+   "bot": false,
+   "ply": 72,
+   "pieces": 24,
+   "by": "valhalla",
+   "swing": 0.22,
+   "status": "resign"
+  },
+  {
+   "id": "QXV2iPw9",
+   "outcome": "W",
+   "bot": false,
+   "ply": 133,
+   "pieces": 4,
+   "by": "opponent",
+   "swing": 4.09,
+   "status": "mate"
+  },
+  {
+   "id": "B03KLKix",
+   "outcome": "W",
+   "bot": false,
+   "ply": 75,
+   "pieces": 16,
+   "by": "valhalla",
+   "swing": 0.21,
+   "status": "resign"
+  },
+  {
+   "id": "bZWml0Yt",
+   "outcome": "W",
+   "bot": false,
+   "ply": 71,
+   "pieces": 20,
+   "by": "opponent",
+   "swing": 1.06,
+   "status": "resign"
+  },
+  {
+   "id": "YY2o2lpB",
+   "outcome": "W",
+   "bot": false,
+   "ply": 74,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 1.05,
+   "status": "resign"
+  },
+  {
+   "id": "xGbAbMww",
+   "outcome": "W",
+   "bot": false,
+   "ply": 71,
+   "pieces": 18,
+   "by": "opponent",
+   "swing": 0.03,
+   "status": "outoftime"
+  },
+  {
+   "id": "U2BuZUYF",
+   "outcome": "W",
+   "bot": true,
+   "ply": 180,
+   "pieces": 5,
+   "by": "opponent",
+   "swing": 3.96,
+   "status": "mate"
+  },
+  {
+   "id": "qZFzkWQc",
+   "outcome": "L",
+   "bot": true,
+   "ply": 53,
+   "pieces": 26,
+   "by": "valhalla",
+   "swing": 0.06,
+   "status": "mate"
+  },
+  {
+   "id": "1MUo6mkF",
+   "outcome": "W",
+   "bot": false,
+   "ply": 61,
+   "pieces": 24,
+   "by": "opponent",
+   "swing": 0.87,
+   "status": "resign"
+  },
+  {
+   "id": "dmeNEFlg",
+   "outcome": "W",
+   "bot": false,
+   "ply": 86,
+   "pieces": 12,
+   "by": "opponent",
+   "swing": 0.89,
+   "status": "resign"
+  },
+  {
+   "id": "nH8JpbBb",
+   "outcome": "W",
+   "bot": false,
+   "ply": 34,
+   "pieces": 36,
+   "by": "opponent",
+   "swing": 0.73,
+   "status": "resign"
+  }
+ ],
+ "decided": {
+  "wins vs humans": {
+   "n": 71,
+   "median_pieces": 18.0,
+   "never_decided_on_board": 6,
+   "phase": {
+    "middlegame": 46,
+    "opening": 3,
+    "endgame": 16
+   }
+  },
+  "wins vs bots": {
+   "n": 2,
+   "median_pieces": 13.5,
+   "never_decided_on_board": 0,
+   "phase": {
+    "middlegame": 1,
+    "endgame": 1
+   }
+  },
+  "losses (all vs bots)": {
+   "n": 5,
+   "median_pieces": 23.0,
+   "never_decided_on_board": 3,
+   "phase": {
+    "middlegame": 2
+   }
+  },
+  "draws vs humans: end": {
+   "n": 5,
+   "median_pieces": 3.0,
+   "never_decided_on_board": 0,
+   "phase": {
+    "endgame": 5
+   }
+  },
+  "draws vs bots: end": {
+   "n": 44,
+   "median_pieces": 4.0,
+   "never_decided_on_board": 0,
+   "phase": {
+    "endgame": 44
+   }
+  }
+ },
+ "errors": {
+  "human opponents": {
+   "opening": {
+    "moves": 1253,
+    "mean_loss": 0.028,
+    "blunder_pct": 0.1
+   },
+   "middlegame": {
+    "moves": 1539,
+    "mean_loss": 0.096,
+    "blunder_pct": 1.8
+   },
+   "endgame": {
+    "moves": 353,
+    "mean_loss": 0.172,
+    "blunder_pct": 4.2
+   }
+  },
+  "valhalla (vs humans)": {
+   "opening": {
+    "moves": 1252,
+    "mean_loss": 0.018,
+    "blunder_pct": 0.0
+   },
+   "middlegame": {
+    "moves": 1536,
+    "mean_loss": 0.028,
+    "blunder_pct": 0.0
+   },
+   "endgame": {
+    "moves": 349,
+    "mean_loss": 0.037,
+    "blunder_pct": 0.0
+   }
+  },
+  "bot opponents": {
+   "opening": {
+    "moves": 847,
+    "mean_loss": 0.012,
+    "blunder_pct": 0.0
+   },
+   "middlegame": {
+    "moves": 1347,
+    "mean_loss": 0.027,
+    "blunder_pct": 0.1
+   },
+   "endgame": {
+    "moves": 1995,
+    "mean_loss": 0.022,
+    "blunder_pct": 0.2
+   }
+  },
+  "valhalla (vs bots)": {
+   "opening": {
+    "moves": 845,
+    "mean_loss": 0.016,
+    "blunder_pct": 0.0
+   },
+   "middlegame": {
+    "moves": 1345,
+    "mean_loss": 0.031,
+    "blunder_pct": 0.0
+   },
+   "endgame": {
+    "moves": 2004,
+    "mean_loss": 0.016,
+    "blunder_pct": 0.1
+   }
+  }
+ },
+ "record": {
+  "blitz/bot/D": 44,
+  "blitz/bot/L": 5,
+  "blitz/bot/W": 2,
+  "blitz/human/D": 5,
+  "blitz/human/W": 71,
+  "bullet/bot/L": 2,
+  "bullet/bot/W": 1,
+  "rapid/bot/D": 1,
+  "rapid/human/D": 2
+ },
+ "how_ended": {
+  "bot/D/16-move rule": 12,
+  "bot/D/25-move rule": 6,
+  "bot/D/5-move rule": 16,
+  "bot/D/threefold repetition": 11,
+  "bot/L/mate": 2,
+  "bot/L/outoftime": 5,
+  "bot/W/mate": 3,
+  "human/D/16-move rule": 2,
+  "human/D/25-move rule": 1,
+  "human/D/5-move rule": 3,
+  "human/D/threefold repetition": 1,
+  "human/W/mate": 10,
+  "human/W/outoftime": 14,
+  "human/W/resign": 47
+ },
+ "humans": {
+  "games": 78,
+  "players": 16,
+  "opp_rating_mean": 2046,
+  "opp_rating_max": 2293,
+  "plies_median_wins": 90.0
+ },
+ "bots": {
+  "games": 55,
+  "names": {
+   "Adder": 10,
+   "Virtual-Draughts": 5,
+   "Viral-Bot": 40
+  },
+  "plies_median": 165.0
+ },
+ "losses": [
+  {
+   "id": "f7otPf0Y",
+   "opponent": "Adder",
+   "speed": "blitz",
+   "tc": "3+2",
+   "status": "mate",
+   "plies": 190,
+   "created": "2026-10-24 11:51",
+   "final_eval": -5.0,
+   "min_eval": -5.0
+  },
+  {
+   "id": "wfZP426J",
+   "opponent": "Viral-Bot",
+   "speed": "blitz",
+   "tc": "3+0",
+   "status": "outoftime",
+   "plies": 198,
+   "created": "2026-10-25 19:10",
+   "final_eval": 0.06,
+   "min_eval": -0.14
+  },
+  {
+   "id": "fFrbvSd4",
+   "opponent": "Viral-Bot",
+   "speed": "bullet",
+   "tc": "1+0",
+   "status": "outoftime",
+   "plies": 111,
+   "created": "2026-10-25 19:24",
+   "final_eval": -0.31,
+   "min_eval": -0.84
+  },
+  {
+   "id": "Gs0UiY0X",
+   "opponent": "Viral-Bot",
+   "speed": "bullet",
+   "tc": "1+0",
+   "status": "outoftime",
+   "plies": 103,
+   "created": "2026-10-25 19:28",
+   "final_eval": -0.2,
+   "min_eval": -0.22
+  },
+  {
+   "id": "T4vxkZe6",
+   "opponent": "Viral-Bot",
+   "speed": "blitz",
+   "tc": "3+0",
+   "status": "outoftime",
+   "plies": 191,
+   "created": "2026-10-25 19:55",
+   "final_eval": -0.07,
+   "min_eval": -0.58
+  },
+  {
+   "id": "lFy28Yf0",
+   "opponent": "Viral-Bot",
+   "speed": "blitz",
+   "tc": "3+0",
+   "status": "outoftime",
+   "plies": 207,
+   "created": "2026-10-25 20:51",
+   "final_eval": 0.44,
+   "min_eval": -0.32
+  },
+  {
+   "id": "qZFzkWQc",
+   "opponent": "Viral-Bot",
+   "speed": "blitz",
+   "tc": "3+0",
+   "status": "mate",
+   "plies": 160,
+   "created": "2026-10-26 19:26",
+   "final_eval": -5.0,
+   "min_eval": -5.0
+  }
+ ],
+ "draws": [
+  {
+   "id": "8yVqRA59",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 162,
+   "max_eval": 0.82,
+   "min_eval": -0.49,
+   "end_pieces": 4
+  },
+  {
+   "id": "4umFD2Wm",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 155,
+   "max_eval": 0.91,
+   "min_eval": -0.21,
+   "end_pieces": 3
+  },
+  {
+   "id": "aTl8isLP",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 169,
+   "max_eval": 0.9,
+   "min_eval": -1.19,
+   "end_pieces": 4
+  },
+  {
+   "id": "phRFlh94",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 158,
+   "max_eval": 0.46,
+   "min_eval": -0.36,
+   "end_pieces": 3
+  },
+  {
+   "id": "MFffw4qE",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 163,
+   "max_eval": 0.63,
+   "min_eval": -0.44,
+   "end_pieces": 4
+  },
+  {
+   "id": "rtrNErAu",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 160,
+   "max_eval": 0.91,
+   "min_eval": -0.64,
+   "end_pieces": 4
+  },
+  {
+   "id": "UMzQ6NqC",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 183,
+   "max_eval": 0.66,
+   "min_eval": -0.72,
+   "end_pieces": 3
+  },
+  {
+   "id": "hmP6VfMu",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 157,
+   "max_eval": 0.42,
+   "min_eval": -0.38,
+   "end_pieces": 4
+  },
+  {
+   "id": "n7F4Jcf0",
+   "opponent": "Adder",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 184,
+   "max_eval": 3.39,
+   "min_eval": -0.21,
+   "end_pieces": 4
+  },
+  {
+   "id": "TAwFeFbg",
+   "opponent": "Virtual-Draughts",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 165,
+   "max_eval": 0.93,
+   "min_eval": -1.16,
+   "end_pieces": 4
+  },
+  {
+   "id": "EpM2H2CV",
+   "opponent": "Virtual-Draughts",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 163,
+   "max_eval": 0.93,
+   "min_eval": -0.15,
+   "end_pieces": 4
+  },
+  {
+   "id": "pSmtFkgY",
+   "opponent": "Nityananda",
+   "bot": false,
+   "cause": "5-move rule",
+   "plies": 165,
+   "max_eval": 0.9,
+   "min_eval": -0.18,
+   "end_pieces": 3
+  },
+  {
+   "id": "kfgRLru9",
+   "opponent": "Akvis",
+   "bot": false,
+   "cause": "5-move rule",
+   "plies": 160,
+   "max_eval": 0.27,
+   "min_eval": -2.17,
+   "end_pieces": 3
+  },
+  {
+   "id": "7JFQExXV",
+   "opponent": "DeBarnhamer",
+   "bot": false,
+   "cause": "16-move rule",
+   "plies": 155,
+   "max_eval": 0.77,
+   "min_eval": -0.14,
+   "end_pieces": 4
+  },
+  {
+   "id": "M99B8MNf",
+   "opponent": "DeBarnhamer",
+   "bot": false,
+   "cause": "16-move rule",
+   "plies": 154,
+   "max_eval": 0.55,
+   "min_eval": -0.08,
+   "end_pieces": 4
+  },
+  {
+   "id": "Qe0gVSUP",
+   "opponent": "Akvis",
+   "bot": false,
+   "cause": "threefold repetition",
+   "plies": 120,
+   "max_eval": 0.01,
+   "min_eval": -0.47,
+   "end_pieces": 4
+  },
+  {
+   "id": "56NnBfj4",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 144,
+   "max_eval": 0.01,
+   "min_eval": -0.66,
+   "end_pieces": 3
+  },
+  {
+   "id": "ZGvYBa1H",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 185,
+   "max_eval": 0.06,
+   "min_eval": -0.27,
+   "end_pieces": 5
+  },
+  {
+   "id": "UmvsaAja",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 128,
+   "max_eval": 0.04,
+   "min_eval": -0.42,
+   "end_pieces": 6
+  },
+  {
+   "id": "nlxaRKXI",
+   "opponent": "Akvis",
+   "bot": false,
+   "cause": "25-move rule",
+   "plies": 190,
+   "max_eval": 0.55,
+   "min_eval": -0.07,
+   "end_pieces": 4
+  },
+  {
+   "id": "WRgiiAgS",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 206,
+   "max_eval": 0.14,
+   "min_eval": -0.79,
+   "end_pieces": 6
+  },
+  {
+   "id": "p7uDWNHa",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 165,
+   "max_eval": 1.04,
+   "min_eval": -0.21,
+   "end_pieces": 3
+  },
+  {
+   "id": "o8CXJiTJ",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 195,
+   "max_eval": 0.12,
+   "min_eval": -0.54,
+   "end_pieces": 5
+  },
+  {
+   "id": "8s652SF3",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 148,
+   "max_eval": 0.06,
+   "min_eval": -0.89,
+   "end_pieces": 3
+  },
+  {
+   "id": "vBr4CJTw",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 175,
+   "max_eval": 0.45,
+   "min_eval": -0.07,
+   "end_pieces": 2
+  },
+  {
+   "id": "9W6GMZ28",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 180,
+   "max_eval": 0.01,
+   "min_eval": -0.51,
+   "end_pieces": 6
+  },
+  {
+   "id": "RXIHk5tt",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 149,
+   "max_eval": 0.17,
+   "min_eval": -0.22,
+   "end_pieces": 2
+  },
+  {
+   "id": "nTq78Aj1",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 145,
+   "max_eval": 0.01,
+   "min_eval": -0.68,
+   "end_pieces": 3
+  },
+  {
+   "id": "wuOnM1gb",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 138,
+   "max_eval": 0.1,
+   "min_eval": -0.36,
+   "end_pieces": 4
+  },
+  {
+   "id": "ZbVOirHJ",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 182,
+   "max_eval": 0.99,
+   "min_eval": -0.05,
+   "end_pieces": 4
+  },
+  {
+   "id": "w3IdNwlX",
+   "opponent": "Virtual-Draughts",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 171,
+   "max_eval": 5.0,
+   "min_eval": -0.13,
+   "end_pieces": 4
+  },
+  {
+   "id": "2ATxF5LK",
+   "opponent": "Virtual-Draughts",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 191,
+   "max_eval": 0.93,
+   "min_eval": -1.75,
+   "end_pieces": 4
+  },
+  {
+   "id": "CAdQAWWV",
+   "opponent": "Virtual-Draughts",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 173,
+   "max_eval": 2.93,
+   "min_eval": -0.89,
+   "end_pieces": 4
+  },
+  {
+   "id": "GWbvy0QF",
+   "opponent": "Medes",
+   "bot": false,
+   "cause": "5-move rule",
+   "plies": 129,
+   "max_eval": 0.48,
+   "min_eval": -0.45,
+   "end_pieces": 3
+  },
+  {
+   "id": "yUSI7NQ0",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 202,
+   "max_eval": 0.29,
+   "min_eval": -0.45,
+   "end_pieces": 5
+  },
+  {
+   "id": "AE6UWmFg",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 179,
+   "max_eval": 0.91,
+   "min_eval": -0.08,
+   "end_pieces": 3
+  },
+  {
+   "id": "cHgITd46",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 194,
+   "max_eval": 0.4,
+   "min_eval": -0.21,
+   "end_pieces": 4
+  },
+  {
+   "id": "PHUy89MG",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 155,
+   "max_eval": 0.0,
+   "min_eval": -1.01,
+   "end_pieces": 3
+  },
+  {
+   "id": "yk4mhHJx",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 129,
+   "max_eval": 0.43,
+   "min_eval": -0.43,
+   "end_pieces": 4
+  },
+  {
+   "id": "nQjjms85",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 151,
+   "max_eval": 0.01,
+   "min_eval": -1.02,
+   "end_pieces": 3
+  },
+  {
+   "id": "FPqfHR5j",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 199,
+   "max_eval": 0.67,
+   "min_eval": -0.23,
+   "end_pieces": 4
+  },
+  {
+   "id": "Un3F9xEc",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 194,
+   "max_eval": 0.13,
+   "min_eval": -0.16,
+   "end_pieces": 4
+  },
+  {
+   "id": "Xj5PPOHF",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 162,
+   "max_eval": 0.12,
+   "min_eval": -0.62,
+   "end_pieces": 2
+  },
+  {
+   "id": "uz3nPiqX",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 185,
+   "max_eval": 0.44,
+   "min_eval": -0.25,
+   "end_pieces": 4
+  },
+  {
+   "id": "moMQrr8m",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 235,
+   "max_eval": 0.42,
+   "min_eval": -0.2,
+   "end_pieces": 4
+  },
+  {
+   "id": "Jy0MEbXT",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 134,
+   "max_eval": 0.04,
+   "min_eval": -0.46,
+   "end_pieces": 3
+  },
+  {
+   "id": "TPnA94il",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 158,
+   "max_eval": 0.05,
+   "min_eval": -0.75,
+   "end_pieces": 8
+  },
+  {
+   "id": "a0qgmS5E",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "25-move rule",
+   "plies": 185,
+   "max_eval": 0.19,
+   "min_eval": -0.36,
+   "end_pieces": 4
+  },
+  {
+   "id": "StDz3egJ",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 172,
+   "max_eval": 1.72,
+   "min_eval": -0.01,
+   "end_pieces": 3
+  },
+  {
+   "id": "4XKSfsSs",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "threefold repetition",
+   "plies": 186,
+   "max_eval": 0.35,
+   "min_eval": -0.13,
+   "end_pieces": 4
+  },
+  {
+   "id": "PUUwa3Uj",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "16-move rule",
+   "plies": 160,
+   "max_eval": 2.23,
+   "min_eval": -0.06,
+   "end_pieces": 4
+  },
+  {
+   "id": "YjWMq2Dl",
+   "opponent": "Viral-Bot",
+   "bot": true,
+   "cause": "5-move rule",
+   "plies": 131,
+   "max_eval": 0.11,
+   "min_eval": -0.2,
+   "end_pieces": 2
+  }
+ ]
+}
