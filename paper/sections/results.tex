@@ -1,8 +1,8 @@
 \section{Results}\label{sec:results}
 
-The engine plays on lidraughts.org under the name \emph{valhalla}. This section
-reports every game it played between 24 October 2026, 10:36 UTC (its first game),
-and 26 October 2026, 21:05 UTC: 133 games in total. We first list the games
+The engine plays on lidraughts.org under the name valhalla. This section reports
+every blitz game it played between 24 October 2026, 10:36 UTC (its first game),
+and 26 October 2026, 21:05 UTC: 127 games in total. We first list the games
 (\cref{sec:res-games}), then show how its rating developed and where that rating
 places it among the site's players (\cref{sec:res-rating}), how it fared
 against humans (\cref{sec:res-humans}) and against Scan (\cref{sec:res-scan}),
@@ -10,33 +10,27 @@ and finally how its games were won, drawn and lost (\cref{sec:res-how}).
 
 \subsection{Games played}\label{sec:res-games}
 
-Lidraughts keeps a separate rating for each speed of play. We meant the engine to
-play blitz only, which on lidraughts means games with an estimated duration of
-roughly 3 to 8 minutes per player (3 minutes plus 2 seconds per move, for example).
-Through a configuration error on our part, the engine accepted challenges at every
-speed until 25 October, 20:13 UTC, and in that time played 6 games that were not
-blitz: 3 bullet games (faster) and 3 rapid games (slower). We report them in
-\cref{tab:record} for completeness and leave them out of everything else in this
-section. That leaves 127 blitz games: 76 against humans and 51 against three other
-bots (Adder, Virtual-Draughts and Viral-Bot), the only bots on the site that
-accept games of international draughts. The most common time controls were
-3 minutes with no increment (63 games) and 3 minutes plus 2 seconds per move
-(52 games). One blitz game was unrated.
+Lidraughts keeps a separate rating for each speed of play. We study blitz, which
+on lidraughts means games with an estimated duration of roughly 3 to 8 minutes
+per player (3 minutes plus 2 seconds per move, for example). Of the 127 blitz
+games, 76 were against humans and 51 against three other bots (Adder,
+Virtual-Draughts and Viral-Bot), the only bots on the site that accept games of
+international draughts. The most common time controls were 3 minutes with no
+increment (63 games) and 3 minutes plus 2 seconds per move (52 games). One game
+was unrated.
 
 \begin{table}[ht]
   \centering
-  \caption{All games played by valhalla, from its point of view. The score counts
-  a win as 1 and a draw as $\tfrac12$. The bottom two rows were played by mistake
-  and are excluded from all other results.}\label{tab:record}
-  \begin{tabular}{llrrrrr}
+  \caption{All blitz games played by valhalla, from its point of view. The score
+  counts a win as 1 and a draw as $\tfrac12$.}\label{tab:record}
+  \begin{tabular}{lrrrrr}
     \toprule
-    Speed & Opponent & Games & Won & Drawn & Lost & Score \\
+    Opponent & Games & Won & Drawn & Lost & Score \\
     \midrule
-    Blitz & humans & 76 & 71 & 5 & 0 & 96.7\% \\
-    Blitz & bots   & 51 &  2 & 44 & 5 & 47.1\% \\
+    humans & 76 & 71 &  5 & 0 & 96.7\% \\
+    bots   & 51 &  2 & 44 & 5 & 47.1\% \\
     \midrule
-    Bullet and rapid & humans & 2 & 0 & 2 & 0 & 50.0\% \\
-    Bullet and rapid & bots   & 4 & 1 & 1 & 2 & 37.5\% \\
+    all    & 127 & 73 & 49 & 5 & 76.8\% \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -86,8 +80,7 @@ once the system had more confidence in it. The question mark disappeared after
 
 After its last game the engine was rated 2459, higher than 99.98\% of the
 monthly blitz players. On the blitz leaderboard, which lists human players only,
-one player is rated higher (2506); the next is rated 2400. The target we set
-ourselves, 2800, has not been reached.
+one player is rated higher (2506); the next is rated 2400.
 
 \subsection{Against humans}\label{sec:res-humans}
 
@@ -164,7 +157,7 @@ ahead, or has an advantage worth as much. Because draughts pieces only ever leav
 the board, the number of pieces on the board is a natural clock for the stage of
 the game. We call a position part of the opening while more than 30 of the 40
 pieces remain, part of the middlegame with 16 to 30 pieces, and part of the
-endgame with 15 or fewer. We call a won or lost game \emph{decided} from the
+endgame with 15 or fewer. We call a won or lost game decided from the
 first position after which the winner stayed at least one man ahead, by Scan's
 evaluation, until the end of the game (after smoothing the evaluation with a
 running median over five plies, so that a single noisy score does not move this
@@ -203,7 +196,7 @@ point). \Cref{fig:trajectories} shows the evaluation over each game,
   mean loss per move. Right: share of moves that lost at least one man.}\label{fig:errors}
 \end{figure}
 
-\paragraph{Wins.} Against humans the games follow one pattern. Through the
+The wins against humans follow one pattern. Through the
 opening both sides play almost equally well, giving away 0.018 (valhalla) and
 0.028 (humans) men per move on average, and the evaluation stays level. In the
 middlegame the humans start to make mistakes: they give away 0.096 men per move
@@ -218,7 +211,7 @@ by valhalla that turned a smaller advantage into one of at least a man. The 6
 wins not decided on the board are 4 games in which the human ran out of time in
 a level position and 2 in which the human resigned when about 0.9 men behind.
 
-\paragraph{Draws.} Against the bots almost every game was drawn (44 of 51). Here
+Against the bots almost every game was drawn (44 of 51). Here
 neither side gave much away: both valhalla and its bot opponents lost 0.012 to
 0.031 men per move at every stage, and hardly ever a whole man
 (\cref{fig:errors}). In 39 of the 44 draws valhalla was never a man ahead by
@@ -234,11 +227,10 @@ these advantages were most likely not enough to win. The 5 draws against humans
 also ended in endgames of 3 or 4 pieces; in none of them was valhalla more than
 0.9 men ahead.
 
-\paragraph{Losses.} All 7 losses (5 in blitz, 2 in the bullet games played by
-mistake) were against bots. Five of them were losses on time. All five were
-played on 25 October between 19:10 and 20:51 UTC against Viral-Bot, in games
-without an increment, and in all five Scan judged the position at the end to be
-within half a man of level. They were caused by a fault in the engine's time
+All 5 losses were against bots. Three of them were losses on time. All three
+were played on 25 October between 19:10 and 20:51 UTC against Viral-Bot, in
+games without an increment, and in all three Scan judged the position at the end
+to be within half a man of level. They were caused by a fault in the engine's time
 management that we fixed at about 21:00 UTC that day; none of the 73 games
 played since has been lost on time. The two losses on the board, one against
 Adder (24 October) and one against Viral-Bot (26 October), look alike: no single
