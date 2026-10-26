@@ -43,6 +43,7 @@ struct alignas(64) Accumulator {
 
 namespace eval {
 extern Network net;
+extern int draw_scale;  // scale lone-king-vs-<=3 endings towards 0 (Hub param draw-scale)
 
 void refresh(const Position& pos, Accumulator& acc);
 // child accumulator after `m` played from `parent_pos`

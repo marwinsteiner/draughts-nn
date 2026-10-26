@@ -127,7 +127,32 @@ void update(const Accumulator& parent, const Position& parent_pos, const Move& m
   }
 }
 
+int draw_scale = 0;  // off until validated; Hub param draw-scale
+
+namespace {
+int evaluate_unscaled(const Position& pos, const Accumulator* acc);
+
+// Lone king against at most 3 pieces is usually a draw in international draughts
+// (the lone king holds the long diagonal; lidraughts ends it after 16 or 5 moves).
+// The teacher (Scan without endgame databases) overrates these endings, so the
+// network does too, and the engine would happily trade a winning middlegame down
+// into them. Scale such evaluations towards zero.
+int scale_drawish(const Position& pos, int s) {
+  if (!draw_scale) return s;
+  for (Color c : {WHITE, BLACK}) {
+    const BB mine = pos.pieces[c];
+    if (popcount(mine) == 1 && (mine & pos.kings) && popcount(pos.pieces[~c]) <= 3) return s / 16;
+  }
+  return s;
+}
+}  // namespace
+
 int evaluate(const Position& pos, const Accumulator* acc) {
+  return scale_drawish(pos, evaluate_unscaled(pos, acc));
+}
+
+namespace {
+int evaluate_unscaled(const Position& pos, const Accumulator* acc) {
   if (!net.loaded() || !acc) return handcrafted(pos);
   // Generic float path: column-wise accumulation over the transposed weights
   // (vectorises across outputs without reassociating float sums) and skips the
@@ -213,6 +238,7 @@ int evaluate(const Position& pos, const Accumulator* acc) {
   const int cp = int(out * net.out_scale);
   return std::clamp(cp, -5000, 5000);
 }
+}  // namespace
 
 int handcrafted(const Position& pos) {
   // Material plus mild advancement and centre terms; a placeholder until the

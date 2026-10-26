@@ -45,6 +45,7 @@ int cmd_moves() {
 }
 
 int cmd_eval(int argc, char** argv) {
+  eval::draw_scale = 0;  // raw network output (compared against PyTorch in tests)
   if (argc > 2) {
     std::string err;
     if (!eval::net.load(argv[2], err)) {

@@ -177,6 +177,8 @@ def main() -> None:
     ap.add_argument("--opening-plies", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=Path, help="append games as JSON lines")
+    ap.add_argument("--openings-file", type=Path, help="JSON list of move lists (hub notation) to start from")
+    ap.add_argument("--repeat", type=int, default=1, help="plays of each --openings-file entry (x2 colours)")
     args = ap.parse_args()
 
     a, b = EngineSpec.parse(args.a), EngineSpec.parse(args.b)
@@ -184,7 +186,10 @@ def main() -> None:
     if args.tc:
         base, _, inc = args.tc.partition("+")
         limits.tc_base, limits.tc_inc = float(base), float(inc or 0)
-    openings = make_openings(args.games // 2, args.opening_plies, args.seed)
+    if args.openings_file:  # fixed start positions (game prefixes), each played --repeat times
+        openings = json.loads(args.openings_file.read_text()) * args.repeat
+    else:
+        openings = make_openings(args.games // 2, args.opening_plies, args.seed)
 
     scores: list[float] = []
     reasons: dict[str, int] = {}

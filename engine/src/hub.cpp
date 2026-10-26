@@ -108,6 +108,7 @@ int run_hub() {
       send("param name=nnue value=\"" + nnue_path + "\" type=string");
       send("param name=search-log value=\"" + search_log + "\" type=string");
       send("param name=tt-size value=" + std::to_string(tt_mb) + " type=int min=1 max=16384");
+      send("param name=draw-scale value=" + std::to_string(eval::draw_scale) + " type=int min=0 max=1");
       send("param name=threads value=" + std::to_string(threads) + " type=int min=1 max=64");
       send("param name=lmr value=" + std::to_string(search_options.lmr) + " type=int min=0 max=1");
       send("param name=probcut value=" + std::to_string(search_options.probcut) + " type=int min=0 max=1");
@@ -122,6 +123,7 @@ int run_hub() {
       if (a["name"] == "nnue") nnue_path = a["value"];
       if (a["name"] == "search-log") search_log = a["value"];
       if (a["name"] == "tt-size") tt_mb = std::stoi(a["value"]);
+      if (a["name"] == "draw-scale") eval::draw_scale = std::stoi(a["value"]);
       if (a["name"] == "threads") threads = std::clamp(std::stoi(a["value"]), 1, 64);
       if (a["name"] == "lmr") search_options.lmr = std::stoi(a["value"]);
       if (a["name"] == "probcut") search_options.probcut = std::stoi(a["value"]);
