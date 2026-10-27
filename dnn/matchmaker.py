@@ -1,7 +1,7 @@
 """Challenge other online bots when idle, so the bot keeps playing rated games
 (BOT accounts cannot use the lobby; they only play challenges).
 
-    python -m dnn.matchmaker --bot MyBot [--idle 2]
+    python -m dnn.matchmaker --bot MyBot [--idle 2] [--no-bots]
 
 Etiquette and bookkeeping:
 - only BOT accounts that play international draughts are challenged;
@@ -102,6 +102,7 @@ def main() -> None:
     ap.add_argument("--human-daily", type=int, default=6, help="max challenges to humans per day in total")
     ap.add_argument("--human-gap", type=float, default=24, help="hours between challenges to the same human")
     ap.add_argument("--human-cooldown", type=float, default=72, help="hours after a human ignores/declines")
+    ap.add_argument("--no-bots", action="store_true", help="challenge returning humans only, never bots")
     args = ap.parse_args()
     token = (Path.home() / ".lidraughts_token").read_text().strip()
     auth = {"Authorization": f"Bearer {token}", **lidraughts.UA}
@@ -129,7 +130,7 @@ def main() -> None:
                 last_busy = time.time()
             elif time.time() - last_busy > args.idle * 60:
                 now = time.time()
-                if now - bots_cache[0] > 3600:
+                if not args.no_bots and now - bots_cache[0] > 3600:
                     bots_cache = (now, [b for b in known_bots() if b.lower() != args.bot.lower()])
                 bots = bots_cache[1]
                 humans = returning_humans(args.bot)
@@ -147,6 +148,9 @@ def main() -> None:
                     opp = random.choice(human_cands)
                     tc = humans[opp]
                     state["human_log"].append({"t": now, "name": opp})
+                elif args.no_bots:
+                    last_busy = now  # no returning human free; look again after another idle period
+                    continue
                 else:
                     played = games_today(args.bot)
                     cands = [b for b in bots if b.lower() in live and played.get(b.lower(), 0) < args.per_bot_daily
