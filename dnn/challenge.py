@@ -58,7 +58,8 @@ def _run_round(args: argparse.Namespace) -> int:
 
     r = lidraughts._get(f"{B}/player/top/200/{args.perf}", headers={"Accept": "application/vnd.lidraughts.v3+json"})
     board = {u["id"]: (u["perfs"][args.perf]["rating"], u["username"]) for u in r.json()["users"]
-             if u["id"] not in asked and u["perfs"][args.perf]["rating"] >= args.min_rating}
+             if u["id"] not in asked and u["id"] not in lidraughts.blocked()
+             and u["perfs"][args.perf]["rating"] >= args.min_rating}
     ids = list(board)
     idle = []
     for i in range(0, len(ids), 50):
@@ -139,6 +140,9 @@ def challenge_users(names: list[str], args: argparse.Namespace) -> None:
     try:
         for name in names:
             s = status.get(name.lower(), {})
+            if name.lower() in lidraughts.blocked():
+                print(f"{name}: on the block list, skipped", flush=True)
+                continue
             if not s.get("online") or s.get("playing"):
                 print(f"{name}: {'in a game' if s.get('playing') else 'offline'}, skipped", flush=True)
                 continue

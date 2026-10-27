@@ -21,6 +21,14 @@ import requests
 
 BASE = "https://lidraughts.org"
 UA = {"User-Agent": "draughts-nn research harvester (github.com/marwinsteiner/draughts-nn)"}
+BLOCK_LIST = Path(__file__).parents[1] / "var" / "block_list.txt"  # one name per line; never challenged
+
+
+def blocked() -> set[str]:
+    """Lower-cased names we never challenge (the bot's own block_list declines theirs)."""
+    if not BLOCK_LIST.exists():
+        return set()
+    return {n.strip().lower() for n in BLOCK_LIST.read_text().split() if n.strip()}
 
 
 def _get(url: str, *, params: dict | None = None, headers: dict | None = None, stream: bool = False,

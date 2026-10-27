@@ -133,7 +133,7 @@ def main() -> None:
                 if not args.no_bots and now - bots_cache[0] > 3600:
                     bots_cache = (now, [b for b in known_bots() if b.lower() != args.bot.lower()])
                 bots = bots_cache[1]
-                humans = returning_humans(args.bot)
+                humans = {h: tc for h, tc in returning_humans(args.bot).items() if h.lower() not in lidraughts.blocked()}
                 live = online(bots + list(humans))
                 state["human_log"] = [e for e in state["human_log"] if now - e["t"] < 7 * 86400]
                 sent_today = sum(now - e["t"] < 86400 for e in state["human_log"])
