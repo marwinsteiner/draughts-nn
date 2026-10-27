@@ -20,5 +20,7 @@ fi
 (cd "$REPO" && setsid nohup .venv/bin/python -m dnn.learn watch --bot "$DNN_BOT_NAME" > "$REPO/logs/learn.log" 2>&1 < /dev/null &)
 (cd "$REPO" && setsid nohup .venv/bin/python -m dnn.matchmaker --bot "$DNN_BOT_NAME" > "$REPO/logs/matchmaker.log" 2>&1 < /dev/null &)
 (cd "$REPO" && setsid nohup .venv/bin/python -m dnn.challenge --watch --min-rating 1900 --max 5 --daily 60 --interval 3 > "$REPO/logs/challenge_watch.log" 2>&1 < /dev/null &)
+# Stops all of the above once the study's game limit has been played (bot/game_budget.py).
+(cd "$REPO" && setsid nohup .venv/bin/python -m dnn.freeze --bot "$DNN_BOT_NAME" >> "$REPO/logs/freeze.log" 2>&1 < /dev/null &)
 sleep 2
-pgrep -af "lidraughts-bot.py|dnn.learn|dnn.matchmaker|dnn.challenge" | grep -v pgrep
+pgrep -af "lidraughts-bot.py|dnn.learn|dnn.matchmaker|dnn.challenge|dnn.freeze" | grep -v pgrep
