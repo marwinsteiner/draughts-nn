@@ -34,6 +34,7 @@ challenge:
   concurrency: 4
   block_list: []         # challenges and rematch offers from these players are declined ("later")
   bot_name: "@BOT@"
+  outgoing_marker: "@ROOT@/draughts-nn/var/outgoing_challenge"  # bot/game_budget.py: our open challenge
   max_human_streak: 10   # decline a human whose challenges filled our last 10 games ...
   human_streak_cooldown_min: 120  # ... until 2h after the last of them (playing anyone else resets it)
   sort_by: "best"
