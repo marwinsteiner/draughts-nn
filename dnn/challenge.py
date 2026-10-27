@@ -24,9 +24,11 @@ from pathlib import Path
 
 import requests
 
+from bot.game_budget import account_id, budget_left, outgoing
 from dnn import lidraughts
 
 STATE = Path(__file__).parents[1] / "var" / "challenged_humans.json"
+MARKER = Path(__file__).parents[1] / "var" / "outgoing_challenge"  # see bot/game_budget.py
 LOCK = STATE.with_suffix(".lock")
 
 
@@ -81,8 +83,13 @@ def _run_round(args: argparse.Namespace) -> int:
             if games_now():
                 print("bot is already playing; stopping")
                 break
+            token = auth["Authorization"].split()[1]
+            if budget_left(account_id(token), token, MARKER) <= 0:
+                print("game limit reached; stopping", flush=True)
+                break
             asked[name.lower()] = time.time()
             _save(asked)  # immediately, before the request goes out
+            MARKER.touch()  # until accepted or cancelled
             r = requests.post(f"{B}/api/challenge/{name}", headers=auth, timeout=30,
                               data={"rated": "true", "clock.limit": base, "clock.increment": inc or "0",
                                     "variant": "standard", "color": "random"})
@@ -103,8 +110,10 @@ def _run_round(args: argparse.Namespace) -> int:
                 print(f"{name} ACCEPTED: {B}/{cid}")
                 break
             requests.post(f"{B}/api/challenge/{cid}/cancel", headers=auth, timeout=30)
+            MARKER.unlink(missing_ok=True)
             print(f"{name}: no answer in {args.wait:.0f}s, cancelled", flush=True)
     finally:
+        MARKER.unlink(missing_ok=True)
         subprocess.run(["pkill", "-CONT", "-f", "dnn[.]matchmaker"])
         _save(asked)
     return tried
@@ -133,8 +142,13 @@ def challenge_users(names: list[str], args: argparse.Namespace) -> None:
             if not s.get("online") or s.get("playing"):
                 print(f"{name}: {'in a game' if s.get('playing') else 'offline'}, skipped", flush=True)
                 continue
+            token = auth["Authorization"].split()[1]
+            if budget_left(account_id(token), token, MARKER) - len(pending) <= 0:
+                print(f"{name}: game limit reached, skipped", flush=True)
+                continue
             asked[name.lower()] = time.time()
             _save(asked)
+            MARKER.touch()
             r = requests.post(f"{B}/api/challenge/{name}", headers=auth, timeout=30,
                               data={"rated": "true", "clock.limit": base, "clock.increment": inc or "0",
                                     "variant": "standard", "color": "random"})
@@ -154,6 +168,7 @@ def challenge_users(names: list[str], args: argparse.Namespace) -> None:
             requests.post(f"{B}/api/challenge/{cid}/cancel", headers=auth, timeout=30)
             print(f"{name}: no answer in {args.wait:.0f}s, cancelled", flush=True)
     finally:
+        MARKER.unlink(missing_ok=True)
         subprocess.run(["pkill", "-CONT", "-f", "dnn[.]matchmaker"])
 
 

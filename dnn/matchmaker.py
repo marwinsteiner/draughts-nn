@@ -30,11 +30,13 @@ from pathlib import Path
 
 import requests
 
+from bot.game_budget import budget_left
 from dnn import lidraughts
 
 STATE = Path(__file__).parents[1] / "var" / "matchmaker.json"
+MARKER = Path(__file__).parents[1] / "var" / "outgoing_challenge"  # see bot/game_budget.py
 STANDARD_PERFS = ("ultraBullet", "bullet", "blitz", "rapid", "classical")
-TIME_CONTROLS = ["180+2", "60+1", "120+1", "180+0", "300+3"]
+TIME_CONTROLS = ["180+2", "180+0", "300+3", "180+3", "300+0"]  # blitz only
 
 
 def known_bots() -> list[str]:
@@ -155,14 +157,20 @@ def main() -> None:
                     # Prefer bots that have accepted before.
                     accepting = [b for b in cands if state["accepted_tc"].get(b)]
                     opp = random.choice(accepting or cands)
-                    if state["accepted_tc"].get(opp):
-                        tc = random.choice(state["accepted_tc"][opp])
+                    accepted_blitz = [t for t in state["accepted_tc"].get(opp, []) if t in TIME_CONTROLS]
+                    if accepted_blitz:
+                        tc = random.choice(accepted_blitz)
                     else:
                         k = state["tried_tc"].get(opp, 0)
                         tc = TIME_CONTROLS[k % len(TIME_CONTROLS)]
                         state["tried_tc"][opp] = k + 1
                 cooldown_s = (args.human_cooldown * 3600) if is_human else (args.cooldown * 60)
+                if budget_left(args.bot.lower(), token, MARKER) <= 0:
+                    log("game limit reached; not challenging")
+                    last_busy = now
+                    continue
                 base, _, inc = tc.partition("+")
+                MARKER.touch()  # until accepted or cancelled
                 r = requests.post(f"{lidraughts.BASE}/api/challenge/{opp}", headers=auth, timeout=30,
                                   data={"rated": "true", "clock.limit": base, "clock.increment": inc or "0",
                                         "variant": "standard", "color": "random"})
@@ -195,6 +203,8 @@ def main() -> None:
                 save()
         except Exception as e:  # keep running through network errors
             log(f"error: {e!r}")
+        finally:
+            MARKER.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
