@@ -20,7 +20,7 @@ import urllib.request
 from contextlib import contextmanager
 from pathlib import Path
 
-LIMIT = 200
+LIMIT = 10**9  # cap removed 2026-11-01 (study frozen at 200 blitz games on 2026-10-30)
 SPEED = "blitz"
 BASE = "https://lidraughts.org"
 UNFINISHED = {"created", "started", "aborted", "noStart"}
